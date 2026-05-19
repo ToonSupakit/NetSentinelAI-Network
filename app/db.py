@@ -1,32 +1,32 @@
-# นำเข้าไลบรารีที่จำเป็นสำหรับจัดการฐานข้อมูล
-from sqlalchemy import create_engine, text  # ไลบรารีสำหรับจัดการฐานข้อมูล SQL
-from datetime import datetime  # สำหรับจัดการวันที่และเวลา
-import yaml  # สำหรับอ่านไฟล์การตั้งค่า
+﻿# à¸™à¸³à¹€à¸‚à¹‰à¸²à¹„à¸¥à¸šà¸£à¸²à¸£à¸µà¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™à¸ªà¸³à¸«à¸£à¸±à¸šà¸ˆà¸±à¸”à¸à¸²à¸£à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥
+from sqlalchemy import (
+    create_engine,
+    text,
+)  # à¹„à¸¥à¸šà¸£à¸²à¸£à¸µà¸ªà¸³à¸«à¸£à¸±à¸šà¸ˆà¸±à¸”à¸à¸²à¸£à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ SQL
+from datetime import datetime  # à¸ªà¸³à¸«à¸£à¸±à¸šà¸ˆà¸±à¸”à¸à¸²à¸£à¸§à¸±à¸™à¸—à¸µà¹ˆà¹à¸¥à¸°à¹€à¸§à¸¥à¸²
+import yaml  # à¸ªà¸³à¸«à¸£à¸±à¸šà¸­à¹ˆà¸²à¸™à¹„à¸Ÿà¸¥à¹Œà¸à¸²à¸£à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²
 import logging
 import os
 from dotenv import load_dotenv
 
+from app import user_repository
+
 load_dotenv()
 log = logging.getLogger(__name__)
 
-# อ่านไฟล์การตั้งค่าจาก config.yaml
-with open('config/config.yaml', 'r', encoding='utf-8') as f:
+# à¸­à¹ˆà¸²à¸™à¹„à¸Ÿà¸¥à¹Œà¸à¸²à¸£à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸ˆà¸²à¸ config.yaml
+with open("config/config.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
 
-# สร้างการเชื่อมต่อกับฐานข้อมูล MySQL — อ่าน URL จาก .env
-DB_URL = os.getenv('DB_URL', config.get('database', {}).get('url', ''))
-engine = create_engine(
-    DB_URL,
-    pool_size=5,
-    max_overflow=10,
-    pool_recycle=3600,
-    pool_pre_ping=True
-)
+# à¸ªà¸£à¹‰à¸²à¸‡à¸à¸²à¸£à¹€à¸Šà¸·à¹ˆà¸­à¸¡à¸•à¹ˆà¸­à¸à¸±à¸šà¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ MySQL â€” à¸­à¹ˆà¸²à¸™ URL à¸ˆà¸²à¸ .env
+DB_URL = os.getenv("DB_URL", config.get("database", {}).get("url", ""))
+engine = create_engine(DB_URL, pool_size=5, max_overflow=10, pool_recycle=3600, pool_pre_ping=True)
+
 
 def init_db():
-    """ฟังก์ชันสำหรับเริ่มต้นฐานข้อมูล สร้างตารางที่จำเป็น"""
+    """à¸Ÿà¸±à¸‡à¸à¹Œà¸Šà¸±à¸™à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ à¸ªà¸£à¹‰à¸²à¸‡à¸•à¸²à¸£à¸²à¸‡à¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™"""
     with engine.connect() as conn:
-        # สร้างตาราง interface_logs สำหรับเก็บข้อมูล interface
+        # à¸ªà¸£à¹‰à¸²à¸‡à¸•à¸²à¸£à¸²à¸‡ interface_logs à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸à¹‡à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ interface
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS interface_logs (
                 id             INT AUTO_INCREMENT PRIMARY KEY,
@@ -47,7 +47,7 @@ def init_db():
                 label          VARCHAR(10)
             )
         """))
-        # สร้างตาราง ai_predictions สำหรับเก็บผลการทำนายของ AI
+        # à¸ªà¸£à¹‰à¸²à¸‡à¸•à¸²à¸£à¸²à¸‡ ai_predictions à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸à¹‡à¸šà¸œà¸¥à¸à¸²à¸£à¸—à¸³à¸™à¸²à¸¢à¸‚à¸­à¸‡ AI
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS ai_predictions (
                 id               INT AUTO_INCREMENT PRIMARY KEY,
@@ -57,13 +57,16 @@ def init_db():
                 prediction_label VARCHAR(50),
                 confidence_score FLOAT,
                 detection_source VARCHAR(32) NULL,
+                severity         VARCHAR(16) NULL,
+                correlated_with  VARCHAR(128) NULL,
+                notification_suppressed BOOLEAN DEFAULT FALSE,
                 is_fixed         BOOLEAN DEFAULT FALSE,
                 fixed_at         DATETIME,
                 predicted_at     DATETIME,
                 FOREIGN KEY (log_id) REFERENCES interface_logs(id)
             )
         """))
-        # สร้างตาราง devices สำหรับเก็บข้อมูลอุปกรณ์
+        # à¸ªà¸£à¹‰à¸²à¸‡à¸•à¸²à¸£à¸²à¸‡ devices à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸à¹‡à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸­à¸¸à¸›à¸à¸£à¸“à¹Œ
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS devices (
                 id          INT AUTO_INCREMENT PRIMARY KEY,
@@ -79,8 +82,18 @@ def init_db():
                 created_at  TIMESTAMP DEFAULT current_timestamp()
             )
         """))
+        # à¸ªà¸£à¹‰à¸²à¸‡à¸•à¸²à¸£à¸²à¸‡ users à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸à¹‡à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰ Dashboard
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS users (
+                id          INT AUTO_INCREMENT PRIMARY KEY,
+                username    VARCHAR(50) UNIQUE NOT NULL,
+                password    VARCHAR(255) NOT NULL,
+                role        VARCHAR(20) DEFAULT 'admin',
+                created_at  TIMESTAMP DEFAULT current_timestamp()
+            )
+        """))
 
-        # ── สร้าง Indexes เพื่อเพิ่มความเร็ว query ──────────────────────
+        # â”€â”€ à¸ªà¸£à¹‰à¸²à¸‡ Indexes à¹€à¸žà¸·à¹ˆà¸­à¹€à¸žà¸´à¹ˆà¸¡à¸„à¸§à¸²à¸¡à¹€à¸£à¹‡à¸§ query â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         index_statements = [
             "CREATE INDEX idx_logs_device_intf_time ON interface_logs(device_name, interface_name, collected_at)",
             "CREATE INDEX idx_logs_label ON interface_logs(label)",
@@ -92,46 +105,67 @@ def init_db():
             try:
                 conn.execute(text(stmt))
             except Exception:
-                pass  # index อาจมีอยู่แล้ว
+                pass  # index à¸­à¸²à¸ˆà¸¡à¸µà¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§
 
         conn.commit()
     _migrate_ai_predictions_detection_source()
+    _migrate_ai_predictions_intel_columns()
+    _seed_default_admin()
     log.info("Database initialized with indexes")
 
 
 def _migrate_ai_predictions_detection_source():
-    """เพิ่มคอลัมน์ detection_source สำหรับฐานข้อมูลที่สร้างจากสคีมาเก่า"""
+    """à¹€à¸žà¸´à¹ˆà¸¡à¸„à¸­à¸¥à¸±à¸¡à¸™à¹Œ detection_source à¸ªà¸³à¸«à¸£à¸±à¸šà¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¸ªà¸£à¹‰à¸²à¸‡à¸ˆà¸²à¸à¸ªà¸„à¸µà¸¡à¸²à¹€à¸à¹ˆà¸²"""
     try:
         with engine.connect() as conn:
-            conn.execute(text(
-                "ALTER TABLE ai_predictions ADD COLUMN detection_source VARCHAR(32) NULL"
-            ))
+            conn.execute(text("ALTER TABLE ai_predictions ADD COLUMN detection_source VARCHAR(32) NULL"))
             conn.commit()
     except Exception:
         pass
 
 
+def _migrate_ai_predictions_intel_columns():
+    statements = [
+        "ALTER TABLE ai_predictions ADD COLUMN severity VARCHAR(16) NULL",
+        "ALTER TABLE ai_predictions ADD COLUMN correlated_with VARCHAR(128) NULL",
+        "ALTER TABLE ai_predictions ADD COLUMN notification_suppressed BOOLEAN DEFAULT FALSE",
+    ]
+    for stmt in statements:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text(stmt))
+                conn.commit()
+        except Exception:
+            pass
+
+
 def cleanup_old_data(days=30):
-    """ลบข้อมูลเก่ากว่า N วัน เพื่อไม่ให้ DB บวม"""
+    """à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹€à¸à¹ˆà¸²à¸à¸§à¹ˆà¸² N à¸§à¸±à¸™ à¹€à¸žà¸·à¹ˆà¸­à¹„à¸¡à¹ˆà¹ƒà¸«à¹‰ DB à¸šà¸§à¸¡"""
     try:
         with engine.connect() as conn:
-            # ลบ predictions เก่า
-            result1 = conn.execute(text("""
+            # à¸¥à¸š predictions à¹€à¸à¹ˆà¸²
+            result1 = conn.execute(
+                text("""
                 DELETE FROM ai_predictions
                 WHERE predicted_at < DATE_SUB(NOW(), INTERVAL :days DAY)
-            """), {"days": days})
+            """),
+                {"days": days},
+            )
 
-            # ลบ logs เก่าที่ไม่มี prediction อ้างอิง
-            result2 = conn.execute(text("""
+            # à¸¥à¸š logs à¹€à¸à¹ˆà¸²à¸—à¸µà¹ˆà¹„à¸¡à¹ˆà¸¡à¸µ prediction à¸­à¹‰à¸²à¸‡à¸­à¸´à¸‡
+            result2 = conn.execute(
+                text("""
                 DELETE FROM interface_logs
                 WHERE collected_at < DATE_SUB(NOW(), INTERVAL :days DAY)
                   AND id NOT IN (SELECT log_id FROM ai_predictions)
-            """), {"days": days})
+            """),
+                {"days": days},
+            )
 
             conn.commit()
             total = result1.rowcount + result2.rowcount
             if total > 0:
-                log.info(f"Cleanup: ลบข้อมูลเก่า {total} records (>{days} วัน)")
+                log.info(f"Cleanup: à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹€à¸à¹ˆà¸² {total} records (>{days} à¸§à¸±à¸™)")
     except Exception as e:
         log.error(f"Cleanup error: {e}")
 
@@ -139,17 +173,17 @@ def cleanup_old_data(days=30):
 def get_analytics():
     with engine.connect() as conn:
 
-        # 1. สรุป anomaly ทั้งหมด
+        # 1. à¸ªà¸£à¸¸à¸› anomaly à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
         anomaly_summary = conn.execute(text("""
             SELECT 
                 COUNT(*) as total_logs,
                 SUM(label = 'anomaly') as total_anomaly,
                 SUM(label = 'normal')  as total_normal,
-                ROUND(SUM(label = 'anomaly') / COUNT(*) * 100, 1) as anomaly_pct
+                ROUND(SUM(label = 'anomaly') / NULLIF(COUNT(*), 0) * 100, 1) as anomaly_pct
             FROM interface_logs
         """)).fetchone()
 
-        # 2. anomaly วันนี้
+        # 2. anomaly à¸§à¸±à¸™à¸™à¸µà¹‰
         anomaly_today = conn.execute(text("""
             SELECT COUNT(*) as today_anomaly
             FROM ai_predictions
@@ -162,12 +196,12 @@ def get_analytics():
             SELECT 
                 COUNT(*)                                    as total_anomaly,
                 SUM(is_fixed = 1)                           as total_fixed,
-                ROUND(SUM(is_fixed = 1) / COUNT(*) * 100, 1) as fix_rate_pct
+                ROUND(SUM(is_fixed = 1) / NULLIF(COUNT(*), 0) * 100, 1) as fix_rate_pct
             FROM ai_predictions
             WHERE prediction_label = 'anomaly'
         """)).fetchone()
 
-        # 4. top 5 device ที่มีปัญหาเยอะสุด
+        # 4. top 5 device à¸—à¸µà¹ˆà¸¡à¸µà¸›à¸±à¸à¸«à¸²à¹€à¸¢à¸­à¸°à¸ªà¸¸à¸”
         top_devices = conn.execute(text("""
             SELECT device_name, COUNT(*) as anomaly_count
             FROM ai_predictions
@@ -177,7 +211,7 @@ def get_analytics():
             LIMIT 5
         """)).fetchall()
 
-        # 5. top 5 interface ที่มีปัญหาเยอะสุด
+        # 5. top 5 interface à¸—à¸µà¹ˆà¸¡à¸µà¸›à¸±à¸à¸«à¸²à¹€à¸¢à¸­à¸°à¸ªà¸¸à¸”
         top_interfaces = conn.execute(text("""
             SELECT device_name, interface_name, COUNT(*) as anomaly_count
             FROM ai_predictions
@@ -187,7 +221,7 @@ def get_analytics():
             LIMIT 5
         """)).fetchall()
 
-        # 6. uptime แต่ละ device (% ของเวลาที่ normal)
+        # 6. uptime à¹à¸•à¹ˆà¸¥à¸° device (% à¸‚à¸­à¸‡à¹€à¸§à¸¥à¸²à¸—à¸µà¹ˆ normal)
         uptime = conn.execute(text("""
             SELECT 
                 device_name,
@@ -198,7 +232,7 @@ def get_analytics():
             ORDER BY device_name
         """)).fetchall()
 
-        # 7. traffic trend รายชั่วโมง (6 ชั่วโมงล่าสุด)
+        # 7. traffic trend à¸£à¸²à¸¢à¸Šà¸±à¹ˆà¸§à¹‚à¸¡à¸‡ (6 à¸Šà¸±à¹ˆà¸§à¹‚à¸¡à¸‡à¸¥à¹ˆà¸²à¸ªà¸¸à¸”)
         traffic_trend = conn.execute(text("""
             SELECT 
                 DATE_FORMAT(collected_at, '%H:00') as hour,
@@ -223,21 +257,22 @@ def get_analytics():
         """)).fetchall()
 
         return {
-            'summary'         : anomaly_summary,
-            'today'           : anomaly_today,
-            'fix_rate'        : fix_rate,
-            'top_devices'     : top_devices,
-            'top_interfaces'  : top_interfaces,
-            'uptime'          : uptime,
-            'traffic_trend'   : traffic_trend,
-            'anomaly_by_type' : anomaly_by_type
+            "summary": anomaly_summary,
+            "today": anomaly_today,
+            "fix_rate": fix_rate,
+            "top_devices": top_devices,
+            "top_interfaces": top_interfaces,
+            "uptime": uptime,
+            "traffic_trend": traffic_trend,
+            "anomaly_by_type": anomaly_by_type,
         }
 
 
 def save_log(device, intf, ip, status, proto, rel, tx, rx, err, ltype, zone, location, label):
     now = datetime.now()
     with engine.connect() as conn:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             INSERT INTO interface_logs
             (device_name, interface_name, ip_address, status, protocol,
              reliability, network_load, rxload, input_errors, link_type,
@@ -245,54 +280,181 @@ def save_log(device, intf, ip, status, proto, rel, tx, rx, err, ltype, zone, loc
             VALUES (:device, :intf, :ip, :status, :proto,
                     :rel, :load, :rx, :err, :ltype,
                     :zone, :location, :now, :now, :label)
-        """), {
-            "device": device, "intf": intf, "ip": ip,
-            "status": status, "proto": proto,
-            "rel": rel, "load": tx, "rx": rx, "err": err,
-            "ltype": ltype, "zone": zone, "location": location,
-            "now": now, "label": label
-        })
+        """),
+            {
+                "device": device,
+                "intf": intf,
+                "ip": ip,
+                "status": status,
+                "proto": proto,
+                "rel": rel,
+                "load": tx,
+                "rx": rx,
+                "err": err,
+                "ltype": ltype,
+                "zone": zone,
+                "location": location,
+                "now": now,
+                "label": label,
+            },
+        )
         conn.commit()
         return result.lastrowid
 
-def save_prediction(log_id, device, intf, prediction, confidence, detection_source=None):
+
+def get_interface_runtime_features(device, intf, current_log_id=None, window=20):
+    """Build recent per-interface features for runtime prediction."""
+    try:
+        window = max(2, min(int(window), 200))
+    except (TypeError, ValueError):
+        window = 20
+
+    where_current = "AND id <= :current_log_id" if current_log_id else ""
+    params = {"device": device, "intf": intf, "limit": window, "current_log_id": current_log_id or 0}
+
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(f"""
+                SELECT network_load, rxload, input_errors, label
+                FROM interface_logs
+                WHERE device_name = :device
+                  AND interface_name = :intf
+                  {where_current}
+                ORDER BY collected_at DESC, id DESC
+                LIMIT :limit
+            """),
+                params,
+            ).fetchall()
+    except Exception as e:
+        log.debug("Runtime feature query failed for %s/%s: %s", device, intf, e)
+        rows = []
+
+    if not rows:
+        return {
+            "tx_delta": 0,
+            "rx_delta": 0,
+            "error_rate": 0,
+            "uptime_pct": 100,
+            "tx_baseline": None,
+            "rx_baseline": None,
+            "tx_baseline_delta": 0,
+            "rx_baseline_delta": 0,
+        }
+
+    latest = rows[0]
+    older = rows[1] if len(rows) > 1 else None
+    normal_rows = [r for r in rows if r[3] == "normal"]
+    if normal_rows:
+        tx_baseline = sum(float(r[0] or 0) for r in normal_rows) / len(normal_rows)
+        rx_baseline = sum(float(r[1] or 0) for r in normal_rows) / len(normal_rows)
+    else:
+        tx_baseline = float(latest[0] or 0)
+        rx_baseline = float(latest[1] or 0)
+
+    tx_delta = float(latest[0] or 0) - (float(older[0] or 0) if older else float(latest[0] or 0))
+    rx_delta = float(latest[1] or 0) - (float(older[1] or 0) if older else float(latest[1] or 0))
+    err_delta = float(latest[2] or 0) - (float(older[2] or 0) if older else 0)
+    uptime_pct = (sum(1 for r in rows if r[3] == "normal") / len(rows)) * 100
+
+    return {
+        "tx_delta": tx_delta,
+        "rx_delta": rx_delta,
+        "error_rate": max(0, err_delta),
+        "uptime_pct": uptime_pct,
+        "tx_baseline": tx_baseline,
+        "rx_baseline": rx_baseline,
+        "tx_baseline_delta": float(latest[0] or 0) - tx_baseline,
+        "rx_baseline_delta": float(latest[1] or 0) - rx_baseline,
+    }
+
+
+def save_prediction(
+    log_id,
+    device,
+    intf,
+    prediction,
+    confidence,
+    detection_source=None,
+    severity=None,
+    correlated_with=None,
+    notification_suppressed=False,
+):
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             INSERT INTO ai_predictions
             (log_id, device_name, interface_name, prediction_label,
-             confidence_score, detection_source, predicted_at)
-            VALUES (:log_id, :device, :intf, :label, :score, :src, :now)
-        """), {
-            "log_id": log_id, "device": device, "intf": intf,
-            "label": prediction, "score": confidence,
-            "src": detection_source,
-            "now": datetime.now()
-        })
+             confidence_score, detection_source, severity, correlated_with,
+             notification_suppressed, predicted_at)
+            VALUES (:log_id, :device, :intf, :label, :score, :src, :severity,
+                    :correlated_with, :notification_suppressed, :now)
+        """),
+            {
+                "log_id": log_id,
+                "device": device,
+                "intf": intf,
+                "label": prediction,
+                "score": confidence,
+                "src": detection_source,
+                "severity": severity,
+                "correlated_with": correlated_with,
+                "notification_suppressed": bool(notification_suppressed),
+                "now": datetime.now(),
+            },
+        )
         conn.commit()
+
 
 def get_anomaly_history(limit=10):
     with engine.connect() as conn:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT p.predicted_at, p.device_name, p.interface_name,
                     p.prediction_label, p.confidence_score, p.is_fixed,
                     l.status, l.protocol, l.network_load, l.rxload,
-                    p.detection_source
+                    p.detection_source, p.severity, p.correlated_with,
+                    p.notification_suppressed
             FROM ai_predictions p
             JOIN interface_logs l ON p.log_id = l.id
             WHERE p.prediction_label = 'anomaly'
             ORDER BY p.predicted_at DESC
             LIMIT :limit
-        """), {"limit": limit})
+        """),
+            {"limit": limit},
+        )
         return result.fetchall()
+
 
 def mark_as_fixed(log_id):
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             UPDATE ai_predictions
             SET is_fixed = TRUE, fixed_at = :now
             WHERE log_id = :log_id
-        """), {"log_id": log_id, "now": datetime.now()})
+        """),
+            {"log_id": log_id, "now": datetime.now()},
+        )
         conn.commit()
+
+
+def mark_anomalies_fixed_for_interface(device_name, interface_name):
+    """à¸«à¸¥à¸±à¸‡ remediation à¸ˆà¸²à¸ Dashboard â€” à¸—à¸³à¹€à¸„à¸£à¸·à¹ˆà¸­à¸‡à¸«à¸¡à¸²à¸¢ anomaly à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆ fixed à¸‚à¸­à¸‡ interface à¸™à¸µà¹‰"""
+    now = datetime.now()
+    with engine.connect() as conn:
+        conn.execute(
+            text("""
+            UPDATE ai_predictions
+            SET is_fixed = TRUE, fixed_at = :now
+            WHERE prediction_label = 'anomaly'
+              AND COALESCE(is_fixed, 0) = 0
+              AND device_name = :d AND interface_name = :i
+        """),
+            {"d": device_name, "i": interface_name, "now": now},
+        )
+        conn.commit()
+
 
 def get_device_status():
     with engine.connect() as conn:
@@ -311,3 +473,28 @@ def get_device_status():
             ORDER BY l.device_name, l.interface_name
         """))
         return result.fetchall()
+
+
+# â”€â”€ User Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+def _seed_default_admin():
+    user_repository.seed_default_admin(engine)
+
+
+def authenticate_user(username, password):
+    return user_repository.authenticate_user(engine, username, password)
+
+
+def create_user(username, password, role="user"):
+    return user_repository.create_user(engine, username, password, role)
+
+
+def get_all_users():
+    return user_repository.get_all_users(engine)
+
+
+def delete_user(user_id, actor_id=None):
+    return user_repository.delete_user(engine, user_id, actor_id=actor_id)
+
+
+def update_user_role(user_id, role):
+    return user_repository.update_user_role(engine, user_id, role)

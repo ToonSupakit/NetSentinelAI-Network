@@ -1,173 +1,198 @@
-# นำเข้าไลบรารีที่จำเป็นสำหรับการทำนายด้วย AI
-import joblib  # สำหรับโหลดและบันทึก AI model
-import pandas as pd  # สำหรับจัดการข้อมูลแบบ DataFrame
-import yaml  # สำหรับอ่านไฟล์การตั้งค่า
+﻿# à¸™à¸³à¹€à¸‚à¹‰à¸²à¹„à¸¥à¸šà¸£à¸²à¸£à¸µà¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™à¸ªà¸³à¸«à¸£à¸±à¸šà¸à¸²à¸£à¸—à¸³à¸™à¸²à¸¢à¸”à¹‰à¸§à¸¢ AI
+import joblib  # à¸ªà¸³à¸«à¸£à¸±à¸šà¹‚à¸«à¸¥à¸”à¹à¸¥à¸°à¸šà¸±à¸™à¸—à¸¶à¸ AI model
+import yaml  # à¸ªà¸³à¸«à¸£à¸±à¸šà¸­à¹ˆà¸²à¸™à¹„à¸Ÿà¸¥à¹Œà¸à¸²à¸£à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²
 import logging
-from app.db import save_prediction  # ฟังก์ชันสำหรับบันทึกผลการทำนาย
+from app import prediction_intel
+from app.ai_features import frame_for_prediction
+from app.db import (
+    get_interface_runtime_features,
+    save_prediction,
+)  # à¸Ÿà¸±à¸‡à¸à¹Œà¸Šà¸±à¸™à¸ªà¸³à¸«à¸£à¸±à¸šà¸šà¸±à¸™à¸—à¸¶à¸à¸œà¸¥à¸à¸²à¸£à¸—à¸³à¸™à¸²à¸¢
 
 log = logging.getLogger(__name__)
 
-# อ่านไฟล์การตั้งค่าจาก config.yaml
-with open('config/config.yaml', 'r', encoding='utf-8') as f:
+# à¸­à¹ˆà¸²à¸™à¹„à¸Ÿà¸¥à¹Œà¸à¸²à¸£à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸ˆà¸²à¸ config.yaml
+with open("config/config.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
 
-# ตัวแปรโกลบอลสำหรับเก็บโมเดล
+# à¸•à¸±à¸§à¹à¸›à¸£à¹‚à¸à¸¥à¸šà¸­à¸¥à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸à¹‡à¸šà¹‚à¸¡à¹€à¸”à¸¥
 model = None
 
+
 def reload_model():
-    """โหลด หรือ โหลด AI model ใหม่จากไฟล์"""
+    """à¹‚à¸«à¸¥à¸” à¸«à¸£à¸·à¸­ à¹‚à¸«à¸¥à¸” AI model à¹ƒà¸«à¸¡à¹ˆà¸ˆà¸²à¸à¹„à¸Ÿà¸¥à¹Œ"""
     global model
     try:
-        model = joblib.load(config['model']['path'])
-        log.info(f"🔄 โหลด AI model สำเร็จจาก {config['model']['path']}")
+        model = joblib.load(config["model"]["path"])
+        log.info(f"ðŸ”„ à¹‚à¸«à¸¥à¸” AI model à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸ˆà¸²à¸ {config['model']['path']}")
     except FileNotFoundError:
         model = None
-        log.warning(f"⚠️ ไม่พบ model file: {config['model']['path']} — ให้รัน train_model.py ก่อน")
+        log.warning(
+            f"âš ï¸ à¹„à¸¡à¹ˆà¸žà¸š model file: {config['model']['path']} â€” à¹ƒà¸«à¹‰à¸£à¸±à¸™ train_model.py à¸à¹ˆà¸­à¸™"
+        )
     except Exception as e:
         model = None
-        log.error(f"❌ โหลด model ล้มเหลว: {e}")
+        log.error(f"âŒ à¹‚à¸«à¸¥à¸” model à¸¥à¹‰à¸¡à¹€à¸«à¸¥à¸§: {e}")
 
-# โหลดครั้งแรกตอนเริ่มโปรแกรม
+
+# à¹‚à¸«à¸¥à¸”à¸„à¸£à¸±à¹‰à¸‡à¹à¸£à¸à¸•à¸­à¸™à¹€à¸£à¸´à¹ˆà¸¡à¹‚à¸›à¸£à¹à¸à¸£à¸¡
 reload_model()
 
+
 def analyze_cause(data):
-    """วิเคราะห์สาเหตุและให้คำแนะนำสำหรับความผิดปกติ"""
-    causes      = []  # รายการสาเหตุที่เป็นไปได้
-    suggestions = []  # รายการคำแนะนำในการแก้ไข
+    return prediction_intel.analyze_cause(data, config)
 
-    # ตรวจสอบ device down
-    if data.get('is_device_down'):
-        causes.append("อุปกรณ์เชื่อมต่อไม่ได้ (Device Unreachable)")
-        suggestions.append("ตรวจสอบว่าอุปกรณ์เปิดอยู่และเครือข่ายถึงกัน")
-        return causes, suggestions
-
-    # ตรวจสอบสถานะ admin down
-    if data['is_admin_down']:
-        causes.append("Port ถูกปิดด้วยคำสั่ง shutdown")
-        suggestions.append(f"no shutdown บน {data['intf']}")
-    # ตรวจสอบสถานะ port up แต่ protocol down
-    elif data['status_num'] == 1 and data['protocol_num'] == 0:
-        causes.append("Port up แต่ Protocol down (Link down)")
-        suggestions.append("ตรวจสอบสายและอุปกรณ์ปลายทาง")
-    # ตรวจสอบสถานะ physical down
-    elif data['status_num'] == 0:
-        causes.append("Port ไม่ทำงาน (Physical down)")
-        suggestions.append("ตรวจสอบสายและการเชื่อมต่อ")
-
-    # ตรวจสอบ traffic ขาออกสูง
-    if data['network_load'] > config['model']['threshold_load']:
-        pct = round(data['network_load'] / 255 * 100, 1)
-        causes.append(f"Traffic ขาออกสูง ({pct}%)")
-        suggestions.append("ตรวจสอบ traffic อาจมี loop หรือ flood")
-
-    # ตรวจสอบ traffic ขาเข้าสูง
-    if data['rxload'] > config['model']['threshold_load']:
-        pct = round(data['rxload'] / 255 * 100, 1)
-        causes.append(f"Traffic ขาเข้าสูง ({pct}%)")
-        suggestions.append("ตรวจสอบ traffic อาจถูก DDoS")
-
-    # ตรวจสอบความเสถียรต่ำ
-    if data['reliability'] < config['model']['threshold_reliability']:
-        pct = round(data['reliability'] / 255 * 100, 1)
-        causes.append(f"ความเสถียรต่ำ ({pct}%)")
-        suggestions.append("ตรวจสอบคุณภาพสาย")
-
-    # ตรวจสอบ input errors สูง
-    if data['input_errors'] > config['model']['threshold_errors']:
-        causes.append(f"Input errors {data['input_errors']} ครั้ง")
-        suggestions.append("ตรวจสอบ duplex mismatch หรือสายชำรุด")
-
-    # ถ้าไม่มีกฎไหนตรงเลย แต่ยังถูกส่งมา แปลว่า AI ตรวจเจอพฤติกรรมผิดปกติ
-    if not causes:
-        causes.append("AI ตรวจพบพฤติกรรมผิดปกติ (Unusual Pattern Detection)")
-        suggestions.append("ตรวจสอบกราฟ Traffic อาจมีแพทเทิร์นที่ต่างไปจากเดิม")
-
-    return causes, suggestions
 
 def predict_one(data):
-    """ทำนายความผิดปกติสำหรับข้อมูล interface ชุดเดียว
+    """à¸—à¸³à¸™à¸²à¸¢à¸„à¸§à¸²à¸¡à¸œà¸´à¸”à¸›à¸à¸•à¸´à¸ªà¸³à¸«à¸£à¸±à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ interface à¸Šà¸¸à¸”à¹€à¸”à¸µà¸¢à¸§
 
-    AI ทำงานคู่ขนานกับ Rules เสมอ (ไม่ใช่แค่ด่านสอง):
-    1) device_unreachable — เก็บข้อมูลไม่ได้
-    2) rules+ai — ทั้ง Rules และ AI เห็นตรงกันว่าผิดปกติ
-    3) rules — เฉพาะ Rules บอกว่าผิดปกติ (AI ไม่พบ หรือไม่มี model)
-    4) ai — เฉพาะ AI ตรวจพบ pattern ผิดปกติ (Rules มองว่าปกติ)
-    5) healthy — ผ่านทั้ง Rules และ AI
+    AI à¸—à¸³à¸‡à¸²à¸™à¸„à¸¹à¹ˆà¸‚à¸™à¸²à¸™à¸à¸±à¸š Rules à¹€à¸ªà¸¡à¸­ (à¹„à¸¡à¹ˆà¹ƒà¸Šà¹ˆà¹à¸„à¹ˆà¸”à¹ˆà¸²à¸™à¸ªà¸­à¸‡):
+    1) device_unreachable â€” à¹€à¸à¹‡à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸¡à¹ˆà¹„à¸”à¹‰
+    2) rules+ai â€” à¸—à¸±à¹‰à¸‡ Rules à¹à¸¥à¸° AI à¹€à¸«à¹‡à¸™à¸•à¸£à¸‡à¸à¸±à¸™à¸§à¹ˆà¸²à¸œà¸´à¸”à¸›à¸à¸•à¸´
+    3) rules â€” à¹€à¸‰à¸žà¸²à¸° Rules à¸šà¸­à¸à¸§à¹ˆà¸²à¸œà¸´à¸”à¸›à¸à¸•à¸´ (AI à¹„à¸¡à¹ˆà¸žà¸š à¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆà¸¡à¸µ model)
+    4) ai â€” à¹€à¸‰à¸žà¸²à¸° AI à¸•à¸£à¸§à¸ˆà¸žà¸š pattern à¸œà¸´à¸”à¸›à¸à¸•à¸´ (Rules à¸¡à¸­à¸‡à¸§à¹ˆà¸²à¸›à¸à¸•à¸´)
+    5) healthy â€” à¸œà¹ˆà¸²à¸™à¸—à¸±à¹‰à¸‡ Rules à¹à¸¥à¸° AI
     """
-    if data.get('is_device_down'):
-        return 'anomaly', 1.0, 'device_unreachable'
+    if data.get("is_device_down"):
+        return "anomaly", 1.0, "device_unreachable"
 
-    rules_says_anomaly = (data['label'] == 'anomaly')
+    rules_says_anomaly = data["label"] == "anomaly"
 
-    # ── AI Analysis (ทำงานเสมอถ้ามี model) ──────────────────────────────
+    # â”€â”€ AI Analysis (à¸—à¸³à¸‡à¸²à¸™à¹€à¸ªà¸¡à¸­à¸–à¹‰à¸²à¸¡à¸µ model) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     ai_says_anomaly = False
     ai_confidence = 0.0
 
     if model is not None:
-        features = pd.DataFrame([{
-            'reliability'  : data['reliability'],
-            'network_load' : data['network_load'],
-            'rxload'       : data['rxload'],
-            'input_errors' : data['input_errors']
-        }])
+        features = frame_for_prediction(data, model)
 
         pred_int = model.predict(features)[0]
-        # decision_function: ค่ายิ่งติดลบ = ยิ่ง outlier
+        # decision_function: à¸„à¹ˆà¸²à¸¢à¸´à¹ˆà¸‡à¸•à¸´à¸”à¸¥à¸š = à¸¢à¸´à¹ˆà¸‡ outlier
         score = model.decision_function(features)[0]
-        ai_confidence = min(1.0, max(0.0, 0.5 - score))  # แปลงเป็น 0-1
+        ai_confidence = min(1.0, max(0.0, 0.5 - score))  # à¹à¸›à¸¥à¸‡à¹€à¸›à¹‡à¸™ 0-1
 
         if pred_int == -1:
             ai_says_anomaly = True
 
-    # ── ตัดสินผลรวม ─────────────────────────────────────────────────────
+    # â”€â”€ à¸•à¸±à¸”à¸ªà¸´à¸™à¸œà¸¥à¸£à¸§à¸¡ â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if rules_says_anomaly and ai_says_anomaly:
-        # ทั้งสองเห็นตรงกัน → ความมั่นใจสูงสุด
-        return 'anomaly', max(0.95, ai_confidence), 'rules+ai'
+        # à¸—à¸±à¹‰à¸‡à¸ªà¸­à¸‡à¹€à¸«à¹‡à¸™à¸•à¸£à¸‡à¸à¸±à¸™ â†’ à¸„à¸§à¸²à¸¡à¸¡à¸±à¹ˆà¸™à¹ƒà¸ˆà¸ªà¸¹à¸‡à¸ªà¸¸à¸”
+        return "anomaly", max(0.95, ai_confidence), "rules+ai"
 
     if rules_says_anomaly:
-        # เฉพาะ Rules เห็น (AI อาจไม่มี model หรือ AI ไม่เห็นด้วย)
-        return 'anomaly', 1.0, 'rules'
+        # à¹€à¸‰à¸žà¸²à¸° Rules à¹€à¸«à¹‡à¸™ (AI à¸­à¸²à¸ˆà¹„à¸¡à¹ˆà¸¡à¸µ model à¸«à¸£à¸·à¸­ AI à¹„à¸¡à¹ˆà¹€à¸«à¹‡à¸™à¸”à¹‰à¸§à¸¢)
+        return "anomaly", 1.0, "rules"
 
     if ai_says_anomaly:
-        # เฉพาะ AI เห็น — pattern ผิดปกติที่ Rules ไม่ครอบคลุม
-        return 'anomaly', round(ai_confidence, 4), 'ai'
+        # à¹€à¸‰à¸žà¸²à¸° AI à¹€à¸«à¹‡à¸™ â€” pattern à¸œà¸´à¸”à¸›à¸à¸•à¸´à¸—à¸µà¹ˆ Rules à¹„à¸¡à¹ˆà¸„à¸£à¸­à¸šà¸„à¸¥à¸¸à¸¡
+        return "anomaly", round(ai_confidence, 4), "ai"
 
-    # ผ่านทั้งคู่
-    return 'normal', 1.0, 'healthy'
+    # à¸œà¹ˆà¸²à¸™à¸—à¸±à¹‰à¸‡à¸„à¸¹à¹ˆ
+    return "normal", 1.0, "healthy"
+
+
+def enrich_runtime_features(data):
+    enriched = dict(data)
+    if data.get("is_device_down") or data.get("intf") == "ALL":
+        return enriched
+    try:
+        features = get_interface_runtime_features(
+            data.get("device"),
+            data.get("intf"),
+            current_log_id=data.get("log_id"),
+            window=config.get("model", {}).get("feature_window", 20),
+        )
+        enriched.update(features)
+    except Exception as e:
+        log.debug("Runtime feature enrichment failed for %s/%s: %s", data.get("device"), data.get("intf"), e)
+    return enriched
+
+
+def classify_severity(data, confidence, detection_source):
+    return prediction_intel.classify_severity(data, confidence, detection_source, config)
+
+
+def _is_down_event(anomaly):
+    return prediction_intel.is_down_event(anomaly)
+
+
+def _is_root_event(anomaly):
+    return prediction_intel.is_root_event(anomaly)
+
+
+def _same_area(root, child):
+    return prediction_intel.same_area(root, child)
+
+
+def apply_correlation(anomalies):
+    return prediction_intel.apply_correlation(anomalies)
+
 
 def predict_all(collected_data):
-    """ทำนายความผิดปกติสำหรับข้อมูล interface ทั้งหมด"""
-    anomalies = []  # รายการความผิดปกติที่พบ
+    """à¸—à¸³à¸™à¸²à¸¢à¸„à¸§à¸²à¸¡à¸œà¸´à¸”à¸›à¸à¸•à¸´à¸ªà¸³à¸«à¸£à¸±à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ interface à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”"""
+    records = []
+    anomalies = []
 
-    # วนลูปทำนายทีละ interface
-    for data in collected_data:
+    for raw in collected_data:
+        data = enrich_runtime_features(raw)
         prediction, confidence, detection_source = predict_one(data)
+        record = {
+            "data": data,
+            "prediction": prediction,
+            "confidence": round(confidence, 4),
+            "detection_source": detection_source,
+            "severity": None,
+            "correlated_with": None,
+            "notification_suppressed": False,
+        }
+        records.append(record)
 
+        if prediction == "anomaly":
+            causes, suggestions = analyze_cause(data)
+            severity = classify_severity(data, confidence, detection_source)
+            anomaly = {
+                **data,
+                "prediction": prediction,
+                "confidence": confidence,
+                "detection_source": detection_source,
+                "severity": severity,
+                "correlated_with": None,
+                "notification_suppressed": False,
+                "causes": causes,
+                "suggestions": suggestions,
+            }
+            record["severity"] = severity
+            record["anomaly_ref"] = anomaly
+            anomalies.append(anomaly)
+
+    apply_correlation(anomalies)
+    for record in records:
+        anomaly = record.get("anomaly_ref")
+        if anomaly:
+            record["correlated_with"] = anomaly.get("correlated_with")
+            record["notification_suppressed"] = anomaly.get("notification_suppressed", False)
+
+        data = record["data"]
         save_prediction(
-            data['log_id'],
-            data['device'],
-            data['intf'],
-            prediction,
-            round(confidence, 4),
-            detection_source=detection_source,
+            data["log_id"],
+            data["device"],
+            data["intf"],
+            record["prediction"],
+            record["confidence"],
+            detection_source=record["detection_source"],
+            severity=record["severity"],
+            correlated_with=record["correlated_with"],
+            notification_suppressed=record["notification_suppressed"],
         )
 
-        if prediction == 'anomaly':
-            causes, suggestions = analyze_cause(data)
-            anomalies.append({
-                **data,
-                'prediction'        : prediction,
-                'confidence'        : confidence,
-                'detection_source'  : detection_source,
-                'causes'            : causes,
-                'suggestions'       : suggestions,
-            })
+        if record["prediction"] == "anomaly":
             log.info(
-                "Anomaly %s %s source=%s confidence=%.2f",
-                data['device'],
-                data['intf'],
-                detection_source,
-                confidence,
+                "Anomaly %s %s source=%s severity=%s confidence=%.2f suppressed=%s",
+                data["device"],
+                data["intf"],
+                record["detection_source"],
+                record["severity"],
+                record["confidence"],
+                record["notification_suppressed"],
             )
 
-    return anomalies
+    return [a for a in anomalies if not a.get("notification_suppressed")]

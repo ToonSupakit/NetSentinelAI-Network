@@ -26,9 +26,15 @@ devices:
     snmp_community: public
     location: Core
     zone: A
+    role: core
+    interfaces:
+      GigabitEthernet0/0:
+        role: uplink
 
   - name: R2
     host: 192.168.189.10
     device_type: cisco_ios_telnet
     location: Core
     zone: Core
+    role: access
+    upstream_device: R1

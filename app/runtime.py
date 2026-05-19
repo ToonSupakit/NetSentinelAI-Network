@@ -1,4 +1,5 @@
 """Process-wide coordination (shutdown flags, etc.)."""
+
 import threading
 
 shutdown_event = threading.Event()

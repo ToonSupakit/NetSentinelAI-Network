@@ -12,6 +12,19 @@ model:
   train_validation_fraction: 0.2
   random_state: 42
   retrain_interval_hours: 24
+  n_estimators: 200
+  feature_window: 20
+  features:
+    - reliability
+    - network_load
+    - rxload
+    - input_errors
+    - tx_delta
+    - rx_delta
+    - error_rate
+    - uptime_pct
+    - tx_baseline_delta
+    - rx_baseline_delta
 
 # Collector
 collector:
@@ -21,6 +34,18 @@ collector:
 data_retention:
   enabled: true
   days: 30        # ลบข้อมูลเก่ากว่ากี่วัน
+
+# SNMP OID override for new vendors/topologies.
+# Leave empty to use standard IF-MIB plus Cisco private load OIDs.
+snmp:
+  oids: {}
+
+# Demo simulator. Enable when you want a mock topology without real devices.
+simulator:
+  enabled: false
+  interfaces_per_device: 4
+  anomaly_rate: 0.15
+  period_seconds: 60
 
 # Link Type Mapping — กำหนดประเภท link จาก IP prefix
 # เปลี่ยนตรงนี้ให้ตรงกับ topology ของคุณ ไม่ต้องแก้โค้ด

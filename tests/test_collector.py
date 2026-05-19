@@ -1,4 +1,5 @@
 """Unit tests for collector parsing and labeling (no live devices)."""
+
 from app.collector import get_label, parse_interfaces, should_skip
 
 

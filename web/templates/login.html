@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>NetSentinel AI — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="/static/theme.css" rel="stylesheet">
+<script src="/static/theme.js"></script>
+<style>
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--txt); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-card { background: var(--card); border: 1px solid var(--brd); border-radius: 10px; padding: 2.5rem; width: calc(100% - 2rem); max-width: 400px; box-shadow: var(--shadow); }
+.login-logo { text-align: center; margin-bottom: 2rem; }
+.login-logo .icon { width: 48px; height: 48px; background: var(--ac); border-radius: 12px; display: inline-grid; place-items: center; margin-bottom: 1rem; }
+.login-logo h1 { font-size: 1.5rem; font-weight: 700; }
+.login-logo h1 span { color: var(--ac); }
+.login-logo p { color: var(--txt-m); font-size: 0.85rem; margin-top: 0.25rem; }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--txt-m); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.form-group input { width: 100%; padding: 0.75rem 1rem; background: var(--panel-2); border: 1px solid var(--brd); border-radius: 7px; color: var(--txt); font-family: inherit; font-size: 0.9rem; transition: border-color 0.2s, box-shadow .2s; }
+.form-group input:focus { outline: none; border-color: var(--ac); box-shadow: var(--focus); }
+.form-group input.error { border-color: var(--err); }
+.error-msg { color: var(--err); font-size: 0.8rem; margin-top: 0.5rem; display: none; }
+.error-msg.show { display: block; }
+.alert { background: var(--err-bg); color: var(--err); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; display: none; border: 1px solid rgba(239,68,68,0.2); }
+.alert.show { display: block; }
+.btn-login { width: 100%; padding: 0.75rem; background: var(--ac); color: #fff; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+.btn-login:hover { background: var(--ac-h); }
+.btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<button type="button" class="theme-floating" onclick="toggleNetSentinelTheme()" aria-label="Toggle theme">
+  <svg class="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+  <svg class="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+</button>
+
+<div class="login-card">
+  <div class="login-logo">
+    <div class="icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <h1>NetSentinel <span>AI</span></h1>
+    <p>Network Monitoring System</p>
+  </div>
+
+  <div class="alert" id="alert"></div>
+
+  <form id="login-form" onsubmit="return handleLogin(event)">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" autocomplete="username" required minlength="1" maxlength="50">
+      <div class="error-msg" id="err-user">กรุณากรอก Username</div>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password" required minlength="1" maxlength="100">
+      <div class="error-msg" id="err-pass">กรุณากรอก Password</div>
+    </div>
+    <button type="submit" class="btn-login" id="btn-login">Sign In</button>
+  </form>
+</div>
+
+<script>
+function csrfHeaders(extra={}){return {'X-CSRF-Token':document.querySelector('meta[name="csrf-token"]').content,...extra}}
+async function handleLogin(e) {
+  e.preventDefault();
+  
+  const user = document.getElementById('username');
+  const pass = document.getElementById('password');
+  const errUser = document.getElementById('err-user');
+  const errPass = document.getElementById('err-pass');
+  const alert = document.getElementById('alert');
+  const btn = document.getElementById('btn-login');
+
+  // Client-side validation
+  let valid = true;
+  user.classList.remove('error');
+  pass.classList.remove('error');
+  errUser.classList.remove('show');
+  errPass.classList.remove('show');
+  alert.classList.remove('show');
+
+  if (!user.value.trim()) {
+    user.classList.add('error');
+    errUser.classList.add('show');
+    valid = false;
+  }
+  if (!pass.value) {
+    pass.classList.add('error');
+    errPass.classList.add('show');
+    valid = false;
+  }
+  if (!valid) return false;
+
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ username: user.value.trim(), password: pass.value })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      window.location.href = '/';
+    } else {
+      alert.textContent = data.message;
+      alert.classList.add('show');
+      if (data.locked) {
+        btn.textContent = `Locked (${data.remaining}s)`;
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+        }, (data.remaining || 10) * 1000);
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    }
+  } catch(e) {
+    alert.textContent = 'Connection error';
+    alert.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+  return false;
+}
+</script>
+</body>
+</html>

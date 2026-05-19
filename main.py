@@ -19,30 +19,24 @@ load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        logging.FileHandler("netsentinel.log", encoding='utf-8'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    format="[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.FileHandler("netsentinel.log", encoding="utf-8"), logging.StreamHandler(sys.stdout)],
 )
 log = logging.getLogger(__name__)
 
-with open('config/config.yaml', 'r', encoding='utf-8') as f:
+with open("config/config.yaml", "r", encoding="utf-8") as f:
     config = yaml.safe_load(f)
 
-INTERVAL = config.get('collector', {}).get('interval', 10)
-RETENTION_DAYS = config.get('data_retention', {}).get('days', 30)
-RETRAIN_INTERVAL_HOURS = config.get('model', {}).get('retrain_interval_hours', 24)
+INTERVAL = config.get("collector", {}).get("interval", 10)
+RETENTION_DAYS = config.get("data_retention", {}).get("days", 30)
+RETRAIN_INTERVAL_HOURS = config.get("model", {}).get("retrain_interval_hours", 24)
 
 
 def on_timeout(info):
     try:
         if client.is_ready():
-            asyncio.run_coroutine_threadsafe(
-                send_timeout_alert(info),
-                client.loop
-            )
+            asyncio.run_coroutine_threadsafe(send_timeout_alert(info), client.loop)
     except Exception as e:
         log.error("Failed to send timeout alert to Discord: %s", e)
     push_device_down(info)
@@ -97,7 +91,7 @@ def auto_retrain_loop():
 
 def collect_and_predict():
     log.info("Collector + predictor loop started (interval=%ss)", INTERVAL)
-    if config.get('data_retention', {}).get('enabled', True):
+    if config.get("data_retention", {}).get("enabled", True):
         cleanup_old_data(days=RETENTION_DAYS)
 
     cleanup_counter = 0
@@ -110,28 +104,29 @@ def collect_and_predict():
                 for anomaly in anomalies:
                     try:
                         if client.is_ready():
-                            asyncio.run_coroutine_threadsafe(
-                                anomaly_queue.put(anomaly),
-                                client.loop
-                            )
+                            asyncio.run_coroutine_threadsafe(anomaly_queue.put(anomaly), client.loop)
                     except Exception as e:
                         log.error("Failed to queue anomaly for Discord: %s", e)
 
-                    push_anomaly({
-                        'device': anomaly['device'],
-                        'intf': anomaly['intf'],
-                        'ip': anomaly.get('ip', 'N/A'),
-                        'label': anomaly['prediction'],
-                        'is_device_down': anomaly.get('is_device_down', False),
-                        'detection_source': anomaly.get('detection_source'),
-                    })
+                    push_anomaly(
+                        {
+                            "device": anomaly["device"],
+                            "intf": anomaly["intf"],
+                            "ip": anomaly.get("ip", "N/A"),
+                            "label": anomaly["prediction"],
+                            "is_device_down": anomaly.get("is_device_down", False),
+                            "detection_source": anomaly.get("detection_source"),
+                            "severity": anomaly.get("severity"),
+                            "correlated_with": anomaly.get("correlated_with"),
+                        }
+                    )
                 log.info("Reported %s anomaly row(s)", len(anomalies))
             else:
                 log.info("✅ All interfaces OK (Rules ✓ AI ✓)")
 
             cleanup_counter += 1
             if cleanup_counter * INTERVAL >= 3600:
-                if config.get('data_retention', {}).get('enabled', True):
+                if config.get("data_retention", {}).get("enabled", True):
                     cleanup_old_data(days=RETENTION_DAYS)
                 cleanup_counter = 0
 
@@ -154,7 +149,7 @@ def signal_handler(sig, frame):
     _stop_discord_gracefully()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
