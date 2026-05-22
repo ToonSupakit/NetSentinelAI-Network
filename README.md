@@ -1,6 +1,6 @@
 # NetSentinel AI
 
-NetSentinel AI is a network monitoring and auto-remediation tool built for lab/GNS3 environments. It collects interface data using SNMP, uses basic network rules combined with an Isolation Forest Machine Learning model to detect anomalies, sends alerts to Discord, and provides a Flask web dashboard to view status and trigger port fixes or rate-limits.
+NetSentinel AI is a network monitoring and automated remediation system built for lab/GNS3 environments. The system demonstrates the integration of NetDevOps practices with Machine Learning to optimize network monitoring and testing. It collects interface data using SNMP, uses basic network rules combined with an Isolation Forest Machine Learning model to detect anomalies, sends alerts to Discord, and provides a Flask web dashboard to view status and trigger port fixes or rate-limits.
 
 ## System Architecture
 
@@ -13,7 +13,7 @@ NetSentinel AI is a network monitoring and auto-remediation tool built for lab/G
 * **Automatic Retraining:** Automatically retrains the ML model every 24 hours (or on-demand from the settings page) using the history metrics stored in the database so it adapts to network traffic shifts.
 * **Port Fixing (Auto & Manual):** If a port has an anomaly, the system can automatically run configuration commands to fix it (Auto-Remediation), or you can click "Fix" or "Limit" on the dashboard to trigger it manually.
 * **Interactive Discord Bot:** Sends real-time warning cards to Discord. You can actually click buttons directly on the Discord message (like Approve Fix, Rate Limit, Check Status) to control the routers from chat.
-* **Multi-Vendor Support:** Translates simple commands like "fix" or "limit" into actual CLI commands for Cisco, Arista, MikroTik, or Juniper routers using Netmiko.
+* **Multi-Vendor Support:** Translates simple commands like "fix" or "limit" into actual CLI commands for simulated Cisco and MikroTik devices using Netmiko.
 * **Clean Web UI:** A simple Flask web app in dark mode that shows a grid of port statuses (green for healthy, red for error), traffic trends, settings, and logs.
 * **User Roles & Security:** Has login authentication with two roles (Admin vs. normal User) and CSRF protection to make sure only authorized accounts can run fix commands.
 * **Automated Tests:** Includes a test suite built with `pytest` that runs through GitHub Actions CI to make sure database security, SNMP parsing, and prediction logic work correctly.
@@ -210,8 +210,6 @@ Supported Netmiko examples include:
 - `cisco_ios`
 - `cisco_ios_telnet`
 - `cisco_nxos`
-- `arista_eos`
-- `juniper_junos`
 - `mikrotik_routeros`
 
 ## Device SNMP Setup
@@ -387,9 +385,8 @@ Command generation lives in `app/vendor_adapters.py`.
 
 Built-in adapters:
 
-- Cisco and Arista: `fix`, `limit`, `removelimit`
-- MikroTik: `fix`, `limit`, `removelimit`
-- Juniper: `fix`
+- Cisco: `fix`, `limit`, `removelimit`
+- Other vendors: Configurable via local runtime adapters.
 
 Unknown vendors return no commands. You can register local adapters at runtime with `register_adapter(marker, adapter)`.
 
