@@ -4,7 +4,8 @@ NetSentinel AI is a network monitoring and auto-remediation tool built for lab/G
 
 ## System Architecture
 
-<img width="2048" height="1117" alt="diagram-AI" src="https://github.com/user-attachments/assets/9e515fe0-75c4-49a0-8e59-3d6ee3a0042e" />
+<img width="1650" height="953" alt="architecture-ai-network2" src="https://github.com/user-attachments/assets/f9da1e5d-66ef-4943-9fae-1f21d15a7f5a" />
+
 
 ## Key Features
 
