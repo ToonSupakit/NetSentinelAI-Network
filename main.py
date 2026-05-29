@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 import yaml
+import os
 from dotenv import load_dotenv
 
 from app.db import init_db, cleanup_old_data
@@ -17,6 +18,8 @@ from web.dashboard import run_dashboard, push_anomaly, push_device_down
 from app.syslog_server import syslog_server_instance
 
 load_dotenv()
+
+os.makedirs("logs", exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,

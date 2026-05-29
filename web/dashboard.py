@@ -86,6 +86,7 @@ audit = logging.getLogger("audit")
 if not any(
     isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "").endswith("audit.log") for h in audit.handlers
 ):
+    os.makedirs("logs", exist_ok=True)
     audit_handler = logging.FileHandler("logs/audit.log", encoding="utf-8")
     audit_handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
     audit.addHandler(audit_handler)
