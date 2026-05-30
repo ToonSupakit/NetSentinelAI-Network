@@ -1,4 +1,4 @@
-﻿<!-- Sidebar Template â€” include à¹ƒà¸™à¸—à¸¸à¸à¸«à¸™à¹‰à¸² -->
+<!-- Sidebar Template â€” include à¹ƒà¸™à¸—à¸¸à¸à¸«à¸™à¹‰à¸² -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-top">
     <div class="logo">
@@ -172,9 +172,7 @@ const RemediationManager = {
       }
     }
 
-    // Apply translation on load
-    this.translatePage();
-    window.translationObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
+    // (Translation is now handled globally by i18n.js)
   },
 
   show(title, desc) {
@@ -263,6 +261,13 @@ const RemediationManager = {
     connectSocket();
   }
 };
+
+// Initialize RemediationManager on load to inject CSS and set up state
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => RemediationManager.init());
+} else {
+  RemediationManager.init();
+}
 
 // Translation Dictionary (English to Thai mapping)
 const TH_DICT = {
