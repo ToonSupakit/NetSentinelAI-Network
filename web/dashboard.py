@@ -543,67 +543,62 @@ def api_topology():
                     "status": "up"
                 })
             
-        # Ensure PC1, PC2, PC3, PC4 are dynamically added to the nodes list so they display on the map
+        # Ensure PC1-PC8 and Client-1 are dynamically added to the nodes list so they display on the map
         registered_names = [d["id"] for d in devices]
         
-        # Determine CiscoIOSvL2-1 status: it depends on CiscoIOSvL2-1
-        sw1_all = status_map.get(("ciscoiosvl2-1", "all"))
-        sw1_down = True
-        if sw1_all and sw1_all["status"] not in ("down", "offline", "Cannot Connect"):
-            sw1_down = False
-            
-        # Determine CiscoIOSvL2-2 status: it depends on CiscoIOSvL2-2
-        sw2_all = status_map.get(("ciscoiosvl2-2", "all"))
-        sw2_down = True
-        if sw2_all and sw2_all["status"] not in ("down", "offline", "Cannot Connect"):
-            sw2_down = False
+        # Determine L2 switches statuses
+        l2_1_down = status_map.get(("l2-1", "all")) is None or status_map.get(("l2-1", "all"))["status"] in ("down", "offline", "Cannot Connect")
+        l2_2_down = status_map.get(("l2-2", "all")) is None or status_map.get(("l2-2", "all"))["status"] in ("down", "offline", "Cannot Connect")
+        l2_3_down = status_map.get(("l2-3", "all")) is None or status_map.get(("l2-3", "all"))["status"] in ("down", "offline", "Cannot Connect")
+        l2_4_down = status_map.get(("l2-4", "all")) is None or status_map.get(("l2-4", "all"))["status"] in ("down", "offline", "Cannot Connect")
 
-        if "PC1" not in registered_names and not sw1_down:
-            devices.append({
-                "id": "PC1",
-                "name": "PC1",
-                "role": "client",
-                "zone": "A",
-                "host": "10.1.10.1",
-                "status": "up"
-            })
-        if "PC2" not in registered_names and not sw1_down:
-            devices.append({
-                "id": "PC2",
-                "name": "PC2",
-                "role": "client",
-                "zone": "A",
-                "host": "10.1.10.2",
-                "status": "up"
-            })
-        if "PC3" not in registered_names and not sw2_down:
-            devices.append({
-                "id": "PC3",
-                "name": "PC3",
-                "role": "client",
-                "zone": "Core",
-                "host": "10.1.20.1",
-                "status": "up"
-            })
-        if "PC4" not in registered_names and not sw2_down:
-            devices.append({
-                "id": "PC4",
-                "name": "PC4",
-                "role": "client",
-                "zone": "Core",
-                "host": "10.1.20.2",
-                "status": "up"
-            })
+        # VLAN 10 Clients
+        if "PC1" not in registered_names and not l2_1_down:
+            devices.append({"id": "PC1", "name": "PC1", "role": "client", "zone": "VLAN 10", "host": "192.168.1.1", "status": "up"})
+        if "Client-1" not in registered_names and not l2_1_down:
+            devices.append({"id": "Client-1", "name": "Client-1", "role": "client", "zone": "VLAN 10", "host": "192.168.1.2", "status": "up"})
+
+        # VLAN 20 Clients
+        if "PC3" not in registered_names and not l2_2_down:
+            devices.append({"id": "PC3", "name": "PC3", "role": "client", "zone": "VLAN 20", "host": "192.168.2.1", "status": "up"})
+        if "PC4" not in registered_names and not l2_2_down:
+            devices.append({"id": "PC4", "name": "PC4", "role": "client", "zone": "VLAN 20", "host": "192.168.2.2", "status": "up"})
+
+        # VLAN 30 Clients
+        if "PC5" not in registered_names and not l2_3_down:
+            devices.append({"id": "PC5", "name": "PC5", "role": "client", "zone": "VLAN 30", "host": "192.168.3.1", "status": "up"})
+        if "PC6" not in registered_names and not l2_3_down:
+            devices.append({"id": "PC6", "name": "PC6", "role": "client", "zone": "VLAN 30", "host": "192.168.3.2", "status": "up"})
+
+        # VLAN 40 Clients
+        if "PC7" not in registered_names and not l2_4_down:
+            devices.append({"id": "PC7", "name": "PC7", "role": "client", "zone": "VLAN 40", "host": "192.168.4.1", "status": "up"})
+        if "PC8" not in registered_names and not l2_4_down:
+            devices.append({"id": "PC8", "name": "PC8", "role": "client", "zone": "VLAN 40", "host": "192.168.4.2", "status": "up"})
 
         # Define the exact backbone connections matching the GNS3 topology
         backbone_links = [
             ("R1", "FastEthernet0/0", "ESW1", "FastEthernet0/0"),
-            ("ESW1", "FastEthernet0/1", "CiscoIOSvL2-1", "GigabitEthernet0/0"),
-            ("ESW1", "FastEthernet0/2", "CiscoIOSvL2-2", "GigabitEthernet0/0"),
-            ("CiscoIOSvL2-1", "GigabitEthernet0/1", "PC1", "e0"),
-            ("CiscoIOSvL2-1", "GigabitEthernet0/2", "PC2", "e0"),
-            ("CiscoIOSvL2-2", "GigabitEthernet0/1", "PC3", "e0"),
-            ("CiscoIOSvL2-2", "GigabitEthernet0/2", "PC4", "e0"),
+            ("R1", "FastEthernet0/1", "ESW2", "FastEthernet0/0"),
+            
+            ("ESW1", "FastEthernet0/1", "L2-1", "GigabitEthernet0/0"),
+            ("ESW1", "FastEthernet0/2", "L2-2", "GigabitEthernet0/0"),
+            ("ESW1", "FastEthernet0/3", "L2-3", "GigabitEthernet0/0"),
+            ("ESW1", "FastEthernet0/4", "L2-4", "GigabitEthernet0/0"),
+            
+            ("ESW2", "FastEthernet0/1", "L2-1", "GigabitEthernet0/1"),
+            ("ESW2", "FastEthernet0/2", "L2-2", "GigabitEthernet0/1"),
+            ("ESW2", "FastEthernet0/3", "L2-3", "GigabitEthernet0/1"),
+            ("ESW2", "FastEthernet0/4", "L2-4", "GigabitEthernet0/1"),
+            
+            ("L2-1", "GigabitEthernet0/2", "PC1", "e0"),
+            ("L2-1", "GigabitEthernet0/3", "Client-1", "eth0"),
+            ("L2-2", "GigabitEthernet0/2", "PC3", "e0"),
+            ("L2-2", "GigabitEthernet0/3", "PC4", "e0"),
+            ("L2-3", "GigabitEthernet0/2", "PC5", "e0"),
+            ("L2-3", "GigabitEthernet0/3", "PC6", "e0"),
+            ("L2-4", "GigabitEthernet0/2", "PC7", "e0"),
+            ("L2-4", "GigabitEthernet0/3", "PC8", "e0"),
         ]
 
         edges = []
