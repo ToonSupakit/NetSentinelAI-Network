@@ -50,7 +50,7 @@ def upstream_devices(device):
 def should_skip(intf, ip, is_admin_down, skip_types):
     del is_admin_down
     for skip in skip_types:
-        if intf.startswith(skip):
+        if intf.startswith(str(skip)):
             return True
     return ip == "unassigned"
 
@@ -59,7 +59,8 @@ def get_link_type(ip, rules, default):
     if ip == "unknown":
         return "Unknown"
     for rule in rules:
-        if ip.startswith(rule["prefix"]) or rule["prefix"] in ip:
+        prefix = str(rule["prefix"])
+        if ip.startswith(prefix) or prefix in ip:
             return rule["type"]
     return default
 
