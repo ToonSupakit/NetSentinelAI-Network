@@ -543,49 +543,67 @@ def api_topology():
                     "status": "up"
                 })
             
-        # Ensure Client-1 and Client-2 are dynamically added to the nodes list so they display on the map
+        # Ensure PC1, PC2, PC3, PC4 are dynamically added to the nodes list so they display on the map
         registered_names = [d["id"] for d in devices]
         
-        # Determine Client-1 status: it depends on SW-L2-1
-        sw1_all = status_map.get(("sw-l2-1", "all"))
+        # Determine CiscoIOSvL2-1 status: it depends on CiscoIOSvL2-1
+        sw1_all = status_map.get(("ciscoiosvl2-1", "all"))
         sw1_down = True
         if sw1_all and sw1_all["status"] not in ("down", "offline", "Cannot Connect"):
             sw1_down = False
             
-        # Determine Client-2 status: it depends on SW-L2-2
-        sw2_all = status_map.get(("sw-l2-2", "all"))
+        # Determine CiscoIOSvL2-2 status: it depends on CiscoIOSvL2-2
+        sw2_all = status_map.get(("ciscoiosvl2-2", "all"))
         sw2_down = True
         if sw2_all and sw2_all["status"] not in ("down", "offline", "Cannot Connect"):
             sw2_down = False
 
-        if "Client-1" not in registered_names and not sw1_down:
+        if "PC1" not in registered_names and not sw1_down:
             devices.append({
-                "id": "Client-1",
-                "name": "Client-1",
+                "id": "PC1",
+                "name": "PC1",
                 "role": "client",
                 "zone": "A",
-                "host": "10.10.3.10",
+                "host": "10.1.10.1",
                 "status": "up"
             })
-        if "Client-2" not in registered_names and not sw2_down:
+        if "PC2" not in registered_names and not sw1_down:
             devices.append({
-                "id": "Client-2",
-                "name": "Client-2",
+                "id": "PC2",
+                "name": "PC2",
+                "role": "client",
+                "zone": "A",
+                "host": "10.1.10.2",
+                "status": "up"
+            })
+        if "PC3" not in registered_names and not sw2_down:
+            devices.append({
+                "id": "PC3",
+                "name": "PC3",
                 "role": "client",
                 "zone": "Core",
-                "host": "10.10.2.10",
+                "host": "10.1.20.1",
+                "status": "up"
+            })
+        if "PC4" not in registered_names and not sw2_down:
+            devices.append({
+                "id": "PC4",
+                "name": "PC4",
+                "role": "client",
+                "zone": "Core",
+                "host": "10.1.20.2",
                 "status": "up"
             })
 
         # Define the exact backbone connections matching the GNS3 topology
         backbone_links = [
-            ("R1", "FastEthernet0/1", "R2", "FastEthernet0/0"),
-            ("R2", "FastEthernet0/1", "ESW1", "FastEthernet0/0"),
-            ("R2", "FastEthernet1/0", "ESW2", "FastEthernet0/0"),
-            ("ESW1", "FastEthernet0/1", "SW-L2-1", "GigabitEthernet0/0"),
-            ("SW-L2-1", "GigabitEthernet0/1", "Client-1", "eth0"),
-            ("ESW2", "FastEthernet0/1", "SW-L2-2", "GigabitEthernet0/0"),
-            ("SW-L2-2", "GigabitEthernet0/1", "Client-2", "eth0"),
+            ("R1", "FastEthernet0/0", "ESW1", "FastEthernet0/0"),
+            ("ESW1", "FastEthernet0/1", "CiscoIOSvL2-1", "GigabitEthernet0/0"),
+            ("ESW1", "FastEthernet0/2", "CiscoIOSvL2-2", "GigabitEthernet0/0"),
+            ("CiscoIOSvL2-1", "GigabitEthernet0/1", "PC1", "e0"),
+            ("CiscoIOSvL2-1", "GigabitEthernet0/2", "PC2", "e0"),
+            ("CiscoIOSvL2-2", "GigabitEthernet0/1", "PC3", "e0"),
+            ("CiscoIOSvL2-2", "GigabitEthernet0/2", "PC4", "e0"),
         ]
 
         edges = []
