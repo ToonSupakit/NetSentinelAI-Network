@@ -2,14 +2,15 @@
 .env
 config/config.yaml
 config/devices.yaml
-config/.env.example
-config/config.example.yaml
-config/devices.example.yaml
+config/links.yaml
 
 # Python
 __pycache__/
 *.pyc
 *.pyo
+venv/
+.venv/
+env/
 
 # AI Model
 models/
@@ -23,11 +24,7 @@ netsentinel.db
 # Runtime/generated data
 backups/
 memory/
-scratch/*.txt
-scratch/*.py
-scratch/*_run.txt
-scratch/*_route.txt
-scratch/*show*.txt
+scratch/
 
 # IDE
 .vscode/
@@ -39,3 +36,7 @@ scratch/*show*.txt
 # Cache
 .pytest_cache/
 .ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db

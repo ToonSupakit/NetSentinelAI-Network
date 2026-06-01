@@ -543,63 +543,47 @@ def api_topology():
                     "status": "up"
                 })
             
-        # Ensure PC1-PC8 and Client-1 are dynamically added to the nodes list so they display on the map
+        # Ensure ESW1, ESW2, PC1, and PC2 are always added to the map as passive green nodes
         registered_names = [d["id"] for d in devices]
-        
-        # Determine L2 switches statuses
-        l2_1_down = status_map.get(("l2-1", "all")) is None or status_map.get(("l2-1", "all"))["status"] in ("down", "offline", "Cannot Connect")
-        l2_2_down = status_map.get(("l2-2", "all")) is None or status_map.get(("l2-2", "all"))["status"] in ("down", "offline", "Cannot Connect")
-        l2_3_down = status_map.get(("l2-3", "all")) is None or status_map.get(("l2-3", "all"))["status"] in ("down", "offline", "Cannot Connect")
-        l2_4_down = status_map.get(("l2-4", "all")) is None or status_map.get(("l2-4", "all"))["status"] in ("down", "offline", "Cannot Connect")
 
-        # VLAN 10 Clients
-        if "PC1" not in registered_names and not l2_1_down:
-            devices.append({"id": "PC1", "name": "PC1", "role": "client", "zone": "VLAN 10", "host": "192.168.1.1", "status": "up"})
-        if "Client-1" not in registered_names and not l2_1_down:
-            devices.append({"id": "Client-1", "name": "Client-1", "role": "client", "zone": "VLAN 10", "host": "192.168.1.2", "status": "up"})
+        if "ESW1" not in registered_names:
+            devices.append({"id": "ESW1", "name": "ESW1", "role": "access", "zone": "Left_LAN", "host": "192.168.1.254", "status": "up"})
+        if "ESW2" not in registered_names:
+            devices.append({"id": "ESW2", "name": "ESW2", "role": "access", "zone": "Right_LAN", "host": "192.168.2.254", "status": "up"})
+        if "PC1" not in registered_names:
+            devices.append({"id": "PC1", "name": "PC1", "role": "client", "zone": "Left_LAN", "host": "192.168.1.100", "status": "up"})
+        if "PC2" not in registered_names:
+            devices.append({"id": "PC2", "name": "PC2", "role": "client", "zone": "Right_LAN", "host": "192.168.2.100", "status": "up"})
 
-        # VLAN 20 Clients
-        if "PC3" not in registered_names and not l2_2_down:
-            devices.append({"id": "PC3", "name": "PC3", "role": "client", "zone": "VLAN 20", "host": "192.168.2.1", "status": "up"})
-        if "PC4" not in registered_names and not l2_2_down:
-            devices.append({"id": "PC4", "name": "PC4", "role": "client", "zone": "VLAN 20", "host": "192.168.2.2", "status": "up"})
+        # Load links dynamically from config/links.yaml if it exists, otherwise fallback to the current GNS3 topology links
+        backbone_links = []
+        try:
+            links_path = "config/links.yaml"
+            if os.path.exists(links_path):
+                with open(links_path, "r", encoding="utf-8") as lf:
+                    links_data = yaml.safe_load(lf)
+                    for l in links_data.get("links", []):
+                        backbone_links.append((l["source"], l["source_port"], l["target"], l["target_port"]))
+        except Exception as lf_err:
+            log.warning(f"Failed to load dynamic links from config/links.yaml: {lf_err}")
 
-        # VLAN 30 Clients
-        if "PC5" not in registered_names and not l2_3_down:
-            devices.append({"id": "PC5", "name": "PC5", "role": "client", "zone": "VLAN 30", "host": "192.168.3.1", "status": "up"})
-        if "PC6" not in registered_names and not l2_3_down:
-            devices.append({"id": "PC6", "name": "PC6", "role": "client", "zone": "VLAN 30", "host": "192.168.3.2", "status": "up"})
-
-        # VLAN 40 Clients
-        if "PC7" not in registered_names and not l2_4_down:
-            devices.append({"id": "PC7", "name": "PC7", "role": "client", "zone": "VLAN 40", "host": "192.168.4.1", "status": "up"})
-        if "PC8" not in registered_names and not l2_4_down:
-            devices.append({"id": "PC8", "name": "PC8", "role": "client", "zone": "VLAN 40", "host": "192.168.4.2", "status": "up"})
-
-        # Define the exact backbone connections matching the GNS3 topology
-        backbone_links = [
-            ("R1", "FastEthernet0/0", "ESW1", "FastEthernet0/0"),
-            ("R1", "FastEthernet0/1", "ESW2", "FastEthernet0/0"),
-            
-            ("ESW1", "FastEthernet0/1", "L2-1", "GigabitEthernet0/0"),
-            ("ESW1", "FastEthernet0/2", "L2-2", "GigabitEthernet0/0"),
-            ("ESW1", "FastEthernet0/3", "L2-3", "GigabitEthernet0/0"),
-            ("ESW1", "FastEthernet0/4", "L2-4", "GigabitEthernet0/0"),
-            
-            ("ESW2", "FastEthernet0/1", "L2-1", "GigabitEthernet0/1"),
-            ("ESW2", "FastEthernet0/2", "L2-2", "GigabitEthernet0/1"),
-            ("ESW2", "FastEthernet0/3", "L2-3", "GigabitEthernet0/1"),
-            ("ESW2", "FastEthernet0/4", "L2-4", "GigabitEthernet0/1"),
-            
-            ("L2-1", "GigabitEthernet0/2", "PC1", "e0"),
-            ("L2-1", "GigabitEthernet0/3", "Client-1", "eth0"),
-            ("L2-2", "GigabitEthernet0/2", "PC3", "e0"),
-            ("L2-2", "GigabitEthernet0/3", "PC4", "e0"),
-            ("L2-3", "GigabitEthernet0/2", "PC5", "e0"),
-            ("L2-3", "GigabitEthernet0/3", "PC6", "e0"),
-            ("L2-4", "GigabitEthernet0/2", "PC7", "e0"),
-            ("L2-4", "GigabitEthernet0/3", "PC8", "e0"),
-        ]
+        if not backbone_links:
+            # Fallback default links matching the current GNS3 topology
+            backbone_links = [
+                ("ESW1", "FastEthernet0/0", "R2", "FastEthernet1/0"),
+                ("ESW1", "FastEthernet0/1", "PC1", "e0"),
+                ("R2", "FastEthernet0/0", "R1", "FastEthernet0/0"),
+                ("R2", "FastEthernet0/1", "R3", "FastEthernet0/0"),
+                ("R1", "FastEthernet0/1", "R4", "FastEthernet0/1"),
+                ("R3", "FastEthernet0/1", "R4", "FastEthernet0/0"),
+                ("R4", "FastEthernet1/0", "R5", "FastEthernet0/0"),
+                ("R5", "FastEthernet0/1", "R6", "FastEthernet0/0"),
+                ("R5", "FastEthernet1/0", "R7", "FastEthernet0/0"),
+                ("R6", "FastEthernet0/1", "R8", "FastEthernet0/0"),
+                ("R7", "FastEthernet0/1", "R8", "FastEthernet0/1"),
+                ("R8", "FastEthernet1/0", "ESW2", "FastEthernet0/0"),
+                ("ESW2", "FastEthernet0/1", "PC2", "e0"),
+            ]
 
         edges = []
         for dev1, intf1, dev2, intf2 in backbone_links:
