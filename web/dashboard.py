@@ -1528,6 +1528,27 @@ def api_save_env():
         return jsonify({"success": False, "message": str(e)})
 
 
+@app.route("/api/settings/reset-database", methods=["POST"])
+@admin_required
+@admin_action_rate_limited("settings_reset_db")
+def api_reset_database():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+            conn.execute(text("TRUNCATE TABLE ai_predictions"))
+            conn.execute(text("TRUNCATE TABLE interface_logs"))
+            conn.execute(text("TRUNCATE TABLE device_syslogs"))
+            conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+            conn.commit()
+        log.info("Database reset performed via web UI by user_id=%s", session.get("user_id"))
+        audit_log("database_reset", details={"status": "success"})
+        return jsonify({"success": True, "message": "Database reset completed successfully"})
+    except Exception as e:
+        log.error("Failed to reset database: %s", e)
+        audit_log("database_reset", success=False, details={"error": str(e)})
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 # ── User Management API ──────────────────────────────────
 @app.route("/api/users", methods=["GET"])
 @admin_required

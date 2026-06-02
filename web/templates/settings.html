@@ -283,6 +283,22 @@ tr:last-child td{border-bottom:none}
       </details>
       <button class="btn btn-full" style="margin-top: 1.25rem;" onclick="saveConfig()">Save General Settings</button>
     </div>
+
+    <!-- Danger Zone Card -->
+    <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.02); margin-top: 1.5rem;">
+      <h3 style="color: var(--err); display: flex; align-items: center; gap: 0.5rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        Danger Zone: Database Maintenance
+      </h3>
+      <p style="color: var(--txt-m); font-size: 0.8rem; margin-bottom: 1.25rem; line-height: 1.5;">
+        ล้างข้อมูลโทรมาตรทราฟฟิกอินเตอร์เฟส ประวัติการตรวจจับของ AI และ Log ทั้งหมดเพื่อเริ่มบันทึกสถิติใหม่ <br>
+        <span style="color: var(--err); font-weight: 600;">คำเตือน:</span> การกระทำนี้ไม่สามารถยกเลิกได้ แต่รายชื่อผู้ใช้ระบบ (Users) จะยังคงอยู่
+      </p>
+      <button class="btn btn-err" onclick="resetDatabaseNow()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        Reset Database (Clear Telemetry)
+      </button>
+    </div>
   </div>
 
   <!-- Model -->
@@ -833,6 +849,7 @@ function addLinkRule() {
   
   renderLinkRulesTable();
   updateRawConfigTextarea();
+  saveConfig();
 }
 
 function removeLinkRule(idx) {
@@ -840,6 +857,7 @@ function removeLinkRule(idx) {
     configData.link_types.rules.splice(idx, 1);
     renderLinkRulesTable();
     updateRawConfigTextarea();
+    saveConfig();
   }
 }
 
@@ -888,6 +906,7 @@ function addSkipType() {
   
   renderSkipTags();
   updateRawConfigTextarea();
+  saveConfig();
 }
 
 function removeSkipType(idx) {
@@ -895,6 +914,7 @@ function removeSkipType(idx) {
     configData.anomaly.skip_types.splice(idx, 1);
     renderSkipTags();
     updateRawConfigTextarea();
+    saveConfig();
   }
 }
 
@@ -1014,6 +1034,81 @@ async function saveConfig(){
       showToast(d.message, true);
     }
   }catch(e){showToast(e.message||'Invalid JSON',true)}
+}
+
+async function resetDatabaseNow() {
+  Swal.fire({
+    title: 'ล้างฐานข้อมูลระบบ?',
+    html: 'คุณกำลังจะล้างข้อมูลทราฟฟิก ประวัติการแจ้งเตือน และข้อมูลวิเคราะห์ทั้งหมดในฐานข้อมูล<br><br><span style="color:var(--err); font-weight:bold;">คำเตือน: การกระทำนี้ไม่สามารถย้อนกลับได้!</span>',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'ใช่, ฉันมั่นใจที่จะเคลียร์ข้อมูล',
+    cancelButtonText: 'ยกเลิก',
+    background: themeColor('--card'),
+    color: themeColor('--txt'),
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#3a3f58',
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: 'ยืนยันรหัสความปลอดภัย',
+        text: 'กรุณาพิมพ์คำว่า "RESET" เพื่อยืนยันขั้นตอนสุดท้าย:',
+        input: 'text',
+        inputPlaceholder: 'RESET',
+        showCancelButton: true,
+        confirmButtonText: 'ล้างข้อมูลทันที',
+        cancelButtonText: 'ยกเลิก',
+        background: themeColor('--card'),
+        color: themeColor('--txt'),
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#3a3f58',
+        inputValidator: (value) => {
+          if (value !== 'RESET') {
+            return 'คุณพิมพ์คำยืนยันไม่ถูกต้อง!'
+          }
+        }
+      }).then(async (innerResult) => {
+        if (innerResult.isConfirmed && innerResult.value === 'RESET') {
+          try {
+            Swal.showLoading();
+            const r = await fetch('/api/settings/reset-database', {
+              method: 'POST',
+              headers: csrfHeaders()
+            });
+            const d = await r.json();
+            if (d.success) {
+              Swal.fire({
+                title: 'รีเซ็ตสำเร็จ!',
+                text: 'ฐานข้อมูลโทรมาตรเครือข่ายและ AI ได้รับการรีเซ็ตเรียบร้อยแล้ว',
+                icon: 'success',
+                background: themeColor('--card'),
+                color: themeColor('--txt'),
+                confirmButtonColor: '#6366f1'
+              });
+            } else {
+              Swal.fire({
+                title: 'เกิดข้อผิดพลาด',
+                text: d.message || 'ไม่สามารถล้างข้อมูลได้',
+                icon: 'error',
+                background: themeColor('--card'),
+                color: themeColor('--txt'),
+                confirmButtonColor: '#3a3f58'
+              });
+            }
+          } catch (e) {
+            Swal.fire({
+              title: 'Error',
+              text: e.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้',
+              icon: 'error',
+              background: themeColor('--card'),
+              color: themeColor('--txt'),
+              confirmButtonColor: '#3a3f58'
+            });
+          }
+        }
+      });
+    }
+  });
 }
 
 async function saveEnv(){try{const p={APP_ENV:document.getElementById('env-app-env').value,SESSION_COOKIE_SECURE:document.getElementById('env-cookie-secure').value,DASHBOARD_HOST:document.getElementById('env-dashboard-host').value,DASHBOARD_PORT:document.getElementById('env-dashboard-port').value,SOCKETIO_CORS_ORIGINS:document.getElementById('env-socketio-origins').value,DEVICE_USERNAME:document.getElementById('env-dev-user').value,SNMP_V3_USER:document.getElementById('env-snmp-v3-user').value};const fs=document.getElementById('env-flask-secret').value.trim();if(fs)p.FLASK_SECRET=fs;const dp=document.getElementById('env-dev-pass').value.trim();if(dp)p.DEVICE_PASSWORD=dp;const ds=document.getElementById('env-dev-sec').value.trim();if(ds)p.DEVICE_SECRET=ds;const sn=document.getElementById('env-snmp-com').value.trim();if(sn)p.SNMP_COMMUNITY=sn;const sa=document.getElementById('env-snmp-v3-auth').value.trim();if(sa)p.SNMP_V3_AUTH=sa;const sp=document.getElementById('env-snmp-v3-priv').value.trim();if(sp)p.SNMP_V3_PRIV=sp;const r=await fetch('/api/settings/env',{method:'POST',headers:csrfHeaders({'Content-Type':'application/json'}),body:JSON.stringify(p)});const d=await r.json();d.success?showToast('Environment saved'):showToast(d.message,true)}catch(e){showToast(e.message||'Error saving',true)}}
