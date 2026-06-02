@@ -72,6 +72,7 @@ def auto_retrain_loop():
 
 
 def collect_and_predict():
+    global INTERVAL, RETENTION_DAYS
     log.info("Collector + predictor loop started (interval=%ss)", INTERVAL)
     if config.get("data_retention", {}).get("enabled", True):
         cleanup_old_data(days=RETENTION_DAYS)
@@ -79,7 +80,6 @@ def collect_and_predict():
     cleanup_counter = 0
     while not shutdown_event.is_set():
         # Dynamic reload of interval and retention from config.yaml
-        global INTERVAL, RETENTION_DAYS
         try:
             with open("config/config.yaml", "r", encoding="utf-8") as f:
                 temp_config = yaml.safe_load(f) or {}
