@@ -102,11 +102,11 @@ const Toast = Swal.mixin({
   }
 });
 function showToast(m,t){
-  const icon = t==='s'?'success':t==='e'?'error':'warning';
-  Toast.fire({
-    icon: icon,
-    title: m
-  });
+  const opts = { title: m };
+  if (t === 's') opts.icon = 'success';
+  else if (t === 'e') opts.icon = 'error';
+  else if (t === 'w') opts.icon = 'warning';
+  Toast.fire(opts);
 }
 function lc(p){return p>50?'bg-err':p>20?'bg-wrn':'bg-ok'}
 function tdText(value, cssText=''){
@@ -293,7 +293,7 @@ async function loadFeed(){try{const r=await fetch('/api/anomalies');if(!r.ok){co
 function filterByDate(){const v=document.getElementById('feed-date').value;if(v){feedDate=v;renderFeed()}}
 function clearFilter(){feedDate=null;document.getElementById('feed-date').value='';renderFeed()}
 function renderFeed(){const f=document.getElementById('anomaly-feed');f.innerHTML='';let data=feedDate?allFeed.filter(r=>r.predicted_at.split(' ')[0]===feedDate):allFeed;
-if(!data.length){const empty=document.createElement('div');empty.style.cssText='color:var(--txt-m);text-align:center;padding:2rem;font-size:.85rem';empty.textContent='No anomalies';f.appendChild(empty);return}
+if(!data.length){const empty=document.createElement('div');empty.style.cssText='color:var(--txt-m);text-align:center;padding:2rem;font-size:.85rem';empty.textContent=window.NetSentinelI18n?window.NetSentinelI18n.translate('No anomalies detected'):'No anomalies detected';f.appendChild(empty);return}
 let last='';data.forEach(row=>{const d=new Date(row.predicted_at.replace(' ','T'));const ds=d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});const tm=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 if(ds!==last){const s=document.createElement('div');s.style.cssText='padding:.4rem 0;font-size:.7rem;color:var(--txt-m);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid rgba(255,255,255,.05);margin:.4rem 0';s.textContent=ds;f.appendChild(s);last=ds}
 const tx=Math.round(row.network_load/255*100),rx=Math.round(row.rxload/255*100);const el=document.createElement('div');el.className='fi';
@@ -301,7 +301,24 @@ const icon=document.createElement('div');icon.className='fs '+(row.is_fixed?'o':
 const content=document.createElement('div');content.className='fc';
 const title=document.createElement('div');title.className='ft';
 if(row.interface==='ALL'){title.textContent=(row.device||'');}else{title.textContent=(row.device||'')+' - '+(row.interface||'');}
-const sub=document.createElement('div');sub.className='fsu';sub.textContent='TX '+tx+'% | RX '+rx+'% | '+(row.is_fixed?'Fixed':'Pending')+(row.severity?' | '+row.severity:'')+(row.detection_source?' | '+row.detection_source:'')+(row.notification_suppressed?' | correlated '+(row.correlated_with||'root'):'');sub.style.color=row.is_fixed?'var(--ok)':'var(--txt-m)';
+
+const trans = (txt) => window.NetSentinelI18n ? window.NetSentinelI18n.translate(txt) : txt;
+const statusText = row.is_fixed ? trans('Fixed') : trans('Pending');
+const severityText = row.severity ? trans(row.severity) : '';
+const srcText = row.detection_source ? trans(row.detection_source) : '';
+const correlationText = row.notification_suppressed ? trans('correlated with') + ' ' + (row.correlated_with || 'root') : '';
+
+const parts = [
+  'TX ' + tx + '%',
+  'RX ' + rx + '%',
+  statusText
+];
+if (severityText) parts.push(severityText);
+if (srcText) parts.push(srcText);
+if (correlationText) parts.push(correlationText);
+
+const sub=document.createElement('div');sub.className='fsu';sub.textContent=parts.join(' | ');
+sub.style.color=row.is_fixed?'var(--ok)':'var(--txt-m)';
 const timeEl=document.createElement('div');timeEl.className='ftime';timeEl.textContent=tm;
 content.appendChild(title);content.appendChild(sub);
 
@@ -314,8 +331,8 @@ if (causes.length > 0) {
   causeList.style.cssText = 'font-size: 0.72rem; color: #f87171; margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.15rem;';
   causes.forEach(c => {
     const item = document.createElement('div');
-    item.style.cssText = 'display: flex; align-items: flex-start; gap: 0.25rem;';
-    item.innerHTML = `<span style="color:#ef4444">•</span> <span style="line-height:1.35">${esc(c)}</span>`;
+    item.style.cssText = 'line-height: 1.35;';
+    item.textContent = c;
     causeList.appendChild(item);
   });
   content.appendChild(causeList);
@@ -326,8 +343,8 @@ if (suggestions.length > 0 && !row.is_fixed) {
   sugList.style.cssText = 'font-size: 0.69rem; color: #34d399; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 0.15rem; opacity: 0.95;';
   suggestions.forEach(s => {
     const item = document.createElement('div');
-    item.style.cssText = 'display: flex; align-items: flex-start; gap: 0.25rem;';
-    item.innerHTML = `<span style="color:#10b981">⚡ Recommendation:</span> <span style="line-height:1.35">${esc(s)}</span>`;
+    item.style.cssText = 'line-height: 1.35;';
+    item.textContent = s;
     sugList.appendChild(item);
   });
   content.appendChild(sugList);
@@ -372,7 +389,9 @@ socket.on('connect_error', () => {
 // ── Anomaly & Device Down Events ──────────────────────────
 socket.on('anomaly', d => {
   const msg = d.intf === 'ALL' ? d.device : d.device + ' – ' + d.intf;
-  showToast('⚠️ ANOMALY: ' + msg, 'e');
+  const isThai = (window.NetSentinelI18n && window.NetSentinelI18n.currentLang === 'th');
+  const titleText = isThai ? 'พบความผิดปกติ: ' + msg : 'ANOMALY: ' + msg;
+  showToast(titleText, 'none');
   loadFeed();
   loadStatus();
 });
@@ -439,6 +458,9 @@ socket.on('remediation_result', d => {
 
 async function refresh() { await Promise.all([loadStatus(), loadFeed(), loadAnalytics()]) }
 refresh(); setInterval(refresh, 10000);
+document.addEventListener('languagechanged', () => {
+  renderFeed();
+});
 </script>
 </body>
 </html>

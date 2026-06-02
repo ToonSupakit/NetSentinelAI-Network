@@ -73,6 +73,15 @@ def predict_one(data):
         if pred_int == -1:
             ai_says_anomaly = True
 
+        # Override: if interface is completely idle/healthy, suppress AI anomalies
+        if ai_says_anomaly:
+            if (data.get("reliability", 255) >= 255 and
+                data.get("network_load", 0) == 0 and
+                data.get("rxload", 0) == 0 and
+                data.get("input_errors", 0) == 0):
+                ai_says_anomaly = False
+                ai_confidence = 0.0
+
     # -- Combined Decision ----------------------------------------------------
     if rules_says_anomaly and ai_says_anomaly:
         # Both methods agree -> highest confidence
