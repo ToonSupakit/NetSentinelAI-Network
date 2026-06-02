@@ -50,7 +50,7 @@ def test_predict_no_model(monkeypatch):
 
 def test_predict_isolation_forest_outlier(monkeypatch):
     monkeypatch.setattr(pred, "model", _mock_model(-1, -0.2))
-    label, conf, src = pred.predict_one(_base_row())
+    label, conf, src = pred.predict_one(_base_row(network_load=30, rxload=30))
     assert label == "anomaly" and src == "ai"
     assert 0.0 <= conf <= 1.0
 
@@ -63,7 +63,7 @@ def test_predict_isolation_forest_inlier(monkeypatch):
 
 def test_predict_rules_and_ai_agree(monkeypatch):
     monkeypatch.setattr(pred, "model", _mock_model(-1, -0.5))
-    label, conf, src = pred.predict_one(_base_row(label="anomaly"))
+    label, conf, src = pred.predict_one(_base_row(label="anomaly", network_load=30, rxload=30))
     assert label == "anomaly" and src == "rules+ai"
     assert conf >= 0.95
 
@@ -93,7 +93,7 @@ def test_predict_uses_model_feature_names(monkeypatch):
 
 def test_ai_only_anomaly_has_medium_severity(monkeypatch):
     monkeypatch.setattr(pred, "model", _mock_model(-1, -0.3))
-    data = _base_row()
+    data = _base_row(network_load=30, rxload=30)
     label, conf, src = pred.predict_one(data)
 
     assert label == "anomaly"
