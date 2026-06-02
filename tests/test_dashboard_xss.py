@@ -12,7 +12,7 @@ def test_dashboard_dynamic_api_fields_use_text_content():
     assert "tr.appendChild(tdText(row.interface" in template
     assert "tr.appendChild(tdText(row.ip" in template
     assert "title.textContent=(row.device||'')+' - '+(row.interface||'')" in template
-    assert "sub.textContent='TX '+tx+'% | RX '+rx+'% | '" in template
+    assert "sub.textContent=parts.join(' | ');" in template
 
 
 def test_settings_user_table_uses_dom_text_nodes():
