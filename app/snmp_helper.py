@@ -115,7 +115,9 @@ async def snmp_walk_ip_map(host, community):
 
 
 def _valid_load(value):
-    return isinstance(value, int) and 0 <= value <= 255
+    # ใน GNS3/Dynamips ค่า 0 หรือ 1 มักเป็นค่าคงที่ (Static) ที่อุปกรณ์จำลองไม่ยอมอัปเดต
+    # เราจะถือว่าค่าน้อยกว่าหรือเท่ากับ 1 เป็นค่าที่ไม่ถูกต้อง เพื่อบังคับให้ระบบไปคำนวณจาก ifInOctets/ifOutOctets จริง
+    return isinstance(value, int) and 1 < value <= 255
 
 
 def _interface_speed_bps(data, idx):
