@@ -76,8 +76,8 @@ def predict_one(data):
         # Override: if interface is completely idle/healthy, suppress AI anomalies
         if ai_says_anomaly:
             if (data.get("reliability", 255) >= 250 and
-                data.get("network_load", 0) <= 3 and
-                data.get("rxload", 0) <= 3 and
+                data.get("network_load", 0) <= 25 and
+                data.get("rxload", 0) <= 25 and
                 data.get("input_errors", 0) == 0):
                 ai_says_anomaly = False
                 ai_confidence = 0.0
