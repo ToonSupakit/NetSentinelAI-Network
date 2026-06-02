@@ -1,52 +1,84 @@
 """Cause, severity, and correlation helpers for predictions."""
 
 
-def analyze_cause(data, config):
+def analyze_cause(data, config, lang="en"):
     causes = []
     suggestions = []
 
     if data.get("is_device_down"):
-        causes.append("Device Unreachable")
-        suggestions.append(
-            "Verify device power status and network connectivity"
-        )
+        if lang == "en":
+            causes.append("Device Unreachable")
+            suggestions.append("Verify device power status and network connectivity")
+        else:
+            causes.append("อุปกรณ์ติดต่อไม่ได้ (Device Unreachable)")
+            suggestions.append("ตรวจสอบไฟเลี้ยงอุปกรณ์และสถานะการเชื่อมต่อเครือข่าย")
         return causes, suggestions
 
     if data["is_admin_down"]:
-        causes.append("Port administratively shutdown")
-        suggestions.append(f"Run 'no shutdown' on {data['intf']}")
+        if lang == "en":
+            causes.append("Port administratively shutdown")
+            suggestions.append(f"Run 'no shutdown' on {data['intf']}")
+        else:
+            causes.append("พอร์ตถูกสั่งปิดการทำงานโดยผู้ดูแลระบบ (Admin Shutdown)")
+            suggestions.append(f"รันคำสั่ง 'no shutdown' บนอินเตอร์เฟส {data['intf']}")
     elif data["status_num"] == 1 and data["protocol_num"] == 0:
-        causes.append("Interface status is Up, but protocol status is Down (Link down)")
-        suggestions.append("Check cable connection and remote device status")
+        if lang == "en":
+            causes.append("Interface status is Up, but protocol status is Down (Link down)")
+            suggestions.append("Check cable connection and remote device status")
+        else:
+            causes.append("สถานะพอร์ตปกติ แต่โปรโตคอลการสื่อสารขัดข้อง (Link Protocol Down)")
+            suggestions.append("ตรวจสอบการเชื่อมต่อสายสัญญาณและสถานะอุปกรณ์ปลายทาง")
     elif data["status_num"] == 0:
-        causes.append("Interface physical status is Down")
-        suggestions.append("Verify physical cabling and transceiver connectivity")
+        if lang == "en":
+            causes.append("Interface physical status is Down")
+            suggestions.append("Verify physical cabling and transceiver connectivity")
+        else:
+            causes.append("สถานะกายภาพของอินเตอร์เฟสตัดการทำงาน (Interface Down)")
+            suggestions.append("ตรวจสอบสายสัญญาณกายภาพและขั้วต่อเชื่อมสัญญาณ (Transceiver)")
 
     model_cfg = config["model"]
     if data["network_load"] > model_cfg["threshold_load"]:
         pct = round(data["network_load"] / 255 * 100, 1)
-        causes.append(f"High outgoing traffic ({pct}%)")
-        suggestions.append("Inspect traffic patterns for possible network loops or broadcast storms")
+        if lang == "en":
+            causes.append(f"High outgoing traffic ({pct}%)")
+            suggestions.append("Inspect traffic patterns for possible network loops or broadcast storms")
+        else:
+            causes.append(f"ปริมาณทราฟฟิกขาออกสูงผิดปกติ ({pct}%)")
+            suggestions.append("ตรวจสอบลักษณะการวิ่งของทราฟฟิกเพื่อหา Loop หรือ Broadcast Storm ในระบบ")
 
     if data["rxload"] > model_cfg["threshold_load"]:
         pct = round(data["rxload"] / 255 * 100, 1)
-        causes.append(f"High incoming traffic ({pct}%)")
-        suggestions.append("Check for potential DDoS attacks or excessive downloads")
+        if lang == "en":
+            causes.append(f"High incoming traffic ({pct}%)")
+            suggestions.append("Check for potential DDoS attacks or excessive downloads")
+        else:
+            causes.append(f"ปริมาณทราฟฟิกขาเข้ารับข้อมูลสูงผิดปกติ ({pct}%)")
+            suggestions.append("ตรวจสอบการโจมตีประเภท DDoS หรือการดาวน์โหลดไฟล์ขนาดใหญ่ที่ผิดปกติ")
 
     if data["reliability"] < model_cfg["threshold_reliability"]:
         pct = round(data["reliability"] / 255 * 100, 1)
-        causes.append(f"Low interface reliability ({pct}%)")
-        suggestions.append("Inspect cable quality and check for electromagnetic interference")
+        if lang == "en":
+            causes.append(f"Low interface reliability ({pct}%)")
+            suggestions.append("Inspect cable quality and check for electromagnetic interference")
+        else:
+            causes.append(f"ความเสถียรของสายส่งลดต่ำลง ({pct}%)")
+            suggestions.append("ตรวจสอบคุณภาพสายสัญญาณและเช็กสัญญาณรบกวนแม่เหล็กไฟฟ้า (EMI)")
 
     if data["input_errors"] > model_cfg["threshold_errors"]:
-        causes.append(f"High input errors count: {data['input_errors']}")
-        suggestions.append("Check for duplex mismatch or damaged cabling")
+        if lang == "en":
+            causes.append(f"High input errors count: {data['input_errors']}")
+            suggestions.append("Check for duplex mismatch or damaged cabling")
+        else:
+            causes.append(f"พบจำนวนแพ็กเก็ตเสียหายบนพอร์ตสูง: {data['input_errors']} ครั้ง")
+            suggestions.append("ตรวจสอบการตั้งค่า Duplex Mismatch หรือสายส่งสัญญาณชำรุดเสียหาย")
 
     if not causes:
-        causes.append("AI detected anomalous behavior (Unusual Pattern Detection)")
-        suggestions.append(
-            "Review traffic charts for unusual deviation from historic baseline"
-        )
+        if lang == "en":
+            causes.append("AI detected anomalous behavior (Unusual Pattern Detection)")
+            suggestions.append("Review traffic charts for unusual deviation from historic baseline")
+        else:
+            causes.append("AI ตรวจพบพฤติกรรมผิดรูปแบบปกติ (Unusual Pattern Detection)")
+            suggestions.append("ตรวจสอบกราฟสถิติทราฟฟิกเพื่อหาความต่างจากประวัติพฤติกรรมปกติ")
 
     return causes, suggestions
 

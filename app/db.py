@@ -446,7 +446,7 @@ def get_anomaly_history(limit=10):
                     p.prediction_label, p.confidence_score, p.is_fixed,
                     l.status, l.protocol, l.network_load, l.rxload,
                     p.detection_source, p.severity, p.correlated_with,
-                    p.notification_suppressed
+                    p.notification_suppressed, l.reliability, l.input_errors
             FROM ai_predictions p
             JOIN interface_logs l ON p.log_id = l.id
             WHERE p.prediction_label = 'anomaly'

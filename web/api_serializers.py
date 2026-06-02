@@ -20,8 +20,34 @@ def serialize_status_rows(rows):
 
 
 def serialize_anomaly_rows(rows):
-    return [
-        {
+    from app.predictor import analyze_cause
+    serialized = []
+    for row in rows:
+        status = row[6]
+        protocol = row[7]
+        is_device_down = status in ("offline", "Cannot Connect")
+        is_admin_down = status == "admin_down"
+        status_num = 1 if status == "up" else 0
+        protocol_num = 1 if protocol == "up" else 0
+        reliability = row[14] if len(row) > 14 and row[14] is not None else 255
+        input_errors = row[15] if len(row) > 15 and row[15] is not None else 0
+
+        data_dict = {
+            "is_device_down": is_device_down,
+            "is_admin_down": is_admin_down,
+            "status_num": status_num,
+            "protocol_num": protocol_num,
+            "network_load": row[8],
+            "rxload": row[9],
+            "reliability": reliability,
+            "input_errors": input_errors,
+            "intf": row[2],
+        }
+
+        causes_en, suggestions_en = analyze_cause(data_dict, lang="en")
+        causes_th, suggestions_th = analyze_cause(data_dict, lang="th")
+
+        serialized.append({
             "predicted_at": str(row[0]),
             "device": row[1],
             "interface": row[2],
@@ -36,9 +62,12 @@ def serialize_anomaly_rows(rows):
             "severity": row[11] if len(row) > 11 else None,
             "correlated_with": row[12] if len(row) > 12 else None,
             "notification_suppressed": bool(row[13]) if len(row) > 13 else False,
-        }
-        for row in rows
-    ]
+            "causes": causes_en,
+            "suggestions": suggestions_en,
+            "causes_th": causes_th,
+            "suggestions_th": suggestions_th,
+        })
+    return serialized
 
 
 def serialize_analytics(data):

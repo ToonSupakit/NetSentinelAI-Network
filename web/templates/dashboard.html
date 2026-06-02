@@ -303,7 +303,37 @@ const title=document.createElement('div');title.className='ft';
 if(row.interface==='ALL'){title.textContent=(row.device||'');}else{title.textContent=(row.device||'')+' - '+(row.interface||'');}
 const sub=document.createElement('div');sub.className='fsu';sub.textContent='TX '+tx+'% | RX '+rx+'% | '+(row.is_fixed?'Fixed':'Pending')+(row.severity?' | '+row.severity:'')+(row.detection_source?' | '+row.detection_source:'')+(row.notification_suppressed?' | correlated '+(row.correlated_with||'root'):'');sub.style.color=row.is_fixed?'var(--ok)':'var(--txt-m)';
 const timeEl=document.createElement('div');timeEl.className='ftime';timeEl.textContent=tm;
-content.appendChild(title);content.appendChild(sub);el.appendChild(icon);el.appendChild(content);el.appendChild(timeEl);
+content.appendChild(title);content.appendChild(sub);
+
+const isThai = (window.NetSentinelI18n && window.NetSentinelI18n.currentLang === 'th');
+const causes = isThai ? (row.causes_th || row.causes || []) : (row.causes || []);
+const suggestions = isThai ? (row.suggestions_th || row.suggestions || []) : (row.suggestions || []);
+
+if (causes.length > 0) {
+  const causeList = document.createElement('div');
+  causeList.style.cssText = 'font-size: 0.72rem; color: #f87171; margin-top: 0.35rem; display: flex; flex-direction: column; gap: 0.15rem;';
+  causes.forEach(c => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display: flex; align-items: flex-start; gap: 0.25rem;';
+    item.innerHTML = `<span style="color:#ef4444">•</span> <span style="line-height:1.35">${esc(c)}</span>`;
+    causeList.appendChild(item);
+  });
+  content.appendChild(causeList);
+}
+
+if (suggestions.length > 0 && !row.is_fixed) {
+  const sugList = document.createElement('div');
+  sugList.style.cssText = 'font-size: 0.69rem; color: #34d399; margin-top: 0.25rem; display: flex; flex-direction: column; gap: 0.15rem; opacity: 0.95;';
+  suggestions.forEach(s => {
+    const item = document.createElement('div');
+    item.style.cssText = 'display: flex; align-items: flex-start; gap: 0.25rem;';
+    item.innerHTML = `<span style="color:#10b981">⚡ Recommendation:</span> <span style="line-height:1.35">${esc(s)}</span>`;
+    sugList.appendChild(item);
+  });
+  content.appendChild(sugList);
+}
+
+el.appendChild(icon);el.appendChild(content);el.appendChild(timeEl);
 f.appendChild(el)})}
 
 async function loadAnalytics(){try{const r=await fetch('/api/analytics');if(!r.ok){const e=await r.json().catch(()=>({message:'Analytics data unavailable'}));throw new Error(e.message||'Analytics data unavailable')}const d=await r.json();

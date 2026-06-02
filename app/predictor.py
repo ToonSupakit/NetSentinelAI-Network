@@ -39,8 +39,8 @@ def reload_model():
 reload_model()
 
 
-def analyze_cause(data):
-    return prediction_intel.analyze_cause(data, config)
+def analyze_cause(data, lang="en"):
+    return prediction_intel.analyze_cause(data, config, lang=lang)
 
 
 def predict_one(data):
