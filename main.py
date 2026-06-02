@@ -78,6 +78,16 @@ def collect_and_predict():
 
     cleanup_counter = 0
     while not shutdown_event.is_set():
+        # Dynamic reload of interval and retention from config.yaml
+        global INTERVAL, RETENTION_DAYS
+        try:
+            with open("config/config.yaml", "r", encoding="utf-8") as f:
+                temp_config = yaml.safe_load(f) or {}
+            INTERVAL = temp_config.get("collector", {}).get("interval", 10)
+            RETENTION_DAYS = temp_config.get("data_retention", {}).get("days", 30)
+        except Exception as e:
+            log.warning("Failed to dynamically reload interval/retention inside collector loop: %s", e)
+
         try:
             collected = collect_all(on_timeout=on_timeout)
             anomalies = predict_all(collected)

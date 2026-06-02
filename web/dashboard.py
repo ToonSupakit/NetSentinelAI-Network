@@ -523,7 +523,7 @@ def api_topology():
 
         # 2. Build Nodes (devices)
         devices = []
-        for d in devices_config["devices"]:
+        for d in dev_conf.get("devices", []):
             # Check if this device is down based on its 'ALL' status
             dev_all = status_map.get((d["name"].lower(), "all"))
             is_down = False
@@ -593,8 +593,8 @@ def api_topology():
                 continue
 
             # Check if either device is down
-            dev1_is_polled = any(d["name"] == dev1 for d in devices_config["devices"])
-            dev2_is_polled = any(d["name"] == dev2 for d in devices_config["devices"])
+            dev1_is_polled = any(d["name"] == dev1 for d in dev_conf.get("devices", []))
+            dev2_is_polled = any(d["name"] == dev2 for d in dev_conf.get("devices", []))
 
             dev1_is_down = False
             if dev1_is_polled:

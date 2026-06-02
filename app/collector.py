@@ -281,9 +281,37 @@ def collect_device(device, on_timeout=None):
 # -- Multithreaded collection function for all devices ------------------------
 def collect_all(on_timeout=None):
     """Collect interface data from all configured devices concurrently using ThreadPoolExecutor."""
+    global config, SKIP_TYPES, THRESHOLD_LOAD, THRESHOLD_RELIABILITY, THRESHOLD_ERRORS
+    global LINK_TYPE_RULES, LINK_TYPE_DEFAULT
+    
+    # Dynamic reload of config.yaml
+    try:
+        with open("config/config.yaml", "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+            
+        SKIP_TYPES = [s for s in config.get("anomaly", {}).get("skip_types", []) if s is not None]
+        THRESHOLD_LOAD = config.get("model", {}).get("threshold_load", 20)
+        THRESHOLD_RELIABILITY = config.get("model", {}).get("threshold_reliability", 200)
+        THRESHOLD_ERRORS = config.get("model", {}).get("threshold_errors", 10)
+        LINK_TYPE_RULES = config.get("link_types", {}).get("rules", [])
+        LINK_TYPE_DEFAULT = config.get("link_types", {}).get("default", "Other")
+    except Exception as e:
+        log.warning(f"Collector dynamic config reload failed: {e}")
+
+    # Dynamic reload of devices.yaml
+    try:
+        with open("config/devices.yaml", "r", encoding="utf-8") as f:
+            devices_config = yaml.safe_load(f) or {}
+        devices = devices_config.get("devices", [])
+    except Exception as e:
+        log.error(f"Collector dynamic devices reload failed: {e}")
+        return []
+
     all_results = []
-    devices = devices_config["devices"]
-    max_workers = min(len(devices), 8)  # limit to max 8 concurrent threads
+    max_workers = min(len(devices), 8) if devices else 1  # limit to max 8 concurrent threads
+
+    if not devices:
+        return []
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(collect_device, device, on_timeout): device["name"] for device in devices}
