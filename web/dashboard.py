@@ -11,6 +11,7 @@ from app.db import (
     delete_user,
     update_user_role,
     mark_anomalies_fixed_for_interface,
+    purge_devices,
     engine,
 )
 from app.runtime import request_collect_now
@@ -1461,13 +1462,34 @@ def api_save_devices():
         if not ok:
             audit_log("settings_devices_update", success=False, details={"error": err})
             return jsonify({"success": False, "message": err}), 400
+
+        # Detect removed devices and purge their DB records
+        try:
+            with open("config/devices.yaml", "r", encoding="utf-8") as f:
+                old_conf = yaml.safe_load(f) or {}
+            old_names = {d["name"] for d in old_conf.get("devices", []) if "name" in d}
+        except Exception:
+            old_names = set()
+        new_names = {d["name"] for d in new_devices.get("devices", []) if "name" in d}
+        removed = old_names - new_names
+        purged = 0
+        if removed:
+            purged = purge_devices(list(removed))
+
         with open("config/devices.yaml", "w", encoding="utf-8") as f:
             yaml.dump(new_devices, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
         global devices_config
         devices_config = new_devices
         log.info("Devices config updated via web UI")
-        audit_log("settings_devices_update", details={"device_count": len(new_devices.get("devices", []))})
-        return jsonify({"success": True, "message": "Devices configuration saved"})
+        details = {"device_count": len(new_devices.get("devices", []))}
+        if removed:
+            details["removed"] = list(removed)
+            details["purged_records"] = purged
+        audit_log("settings_devices_update", details=details)
+        msg = "Devices configuration saved"
+        if removed:
+            msg += f" ({len(removed)} device(s) removed, {purged} records cleaned)"
+        return jsonify({"success": True, "message": msg})
     except Exception as e:
         log.error("Failed to save devices config: %s", e)
         audit_log("settings_devices_update", success=False, details={"error": str(e)})

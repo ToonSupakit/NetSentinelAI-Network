@@ -489,6 +489,25 @@ def mark_anomalies_fixed_for_interface(device_name, interface_name):
         conn.commit()
 
 
+def purge_devices(device_names):
+    """Delete all database records for the given device names."""
+    if not device_names:
+        return 0
+    total = 0
+    with engine.connect() as conn:
+        placeholders = ", ".join(f":d{i}" for i in range(len(device_names)))
+        params = {f"d{i}": name for i, name in enumerate(device_names)}
+        for table in ("ai_predictions", "interface_logs", "device_syslogs"):
+            result = conn.execute(
+                text(f"DELETE FROM {table} WHERE device_name IN ({placeholders})"),
+                params,
+            )
+            total += result.rowcount
+        conn.commit()
+    log.info("Purged %d records for removed devices: %s", total, device_names)
+    return total
+
+
 def get_device_status(active_devices=None):
     """Retrieve the latest status record for all interfaces across devices."""
     with engine.connect() as conn:
