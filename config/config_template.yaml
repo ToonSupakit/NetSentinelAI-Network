@@ -1,0 +1,55 @@
+anomaly:
+  skip_types:
+  - NVI
+  - Loopback
+  - Tunnel
+  - null
+collector:
+  interval: 30
+data_retention:
+  days: 30
+  enabled: true
+link_types:
+  default: Other
+  rules:
+  - prefix: "192.168.189"
+    type: Management
+  - prefix: "10.10."
+    type: Core
+  - prefix: "192.168.1."
+    type: LAN
+  - prefix: "192.168.2."
+    type: LAN
+  - prefix: "192.168.3."
+    type: LAN
+  - prefix: "192.168.4."
+    type: LAN
+model:
+  contamination: 0.05
+  feature_window: 20
+  features:
+  - reliability
+  - network_load
+  - rxload
+  - input_errors
+  - tx_delta
+  - rx_delta
+  - error_rate
+  - uptime_pct
+  - tx_baseline_delta
+  - rx_baseline_delta
+  n_estimators: 200
+  path: models/anomaly_model_v2.pkl
+  random_state: 42
+  retrain_interval_hours: 24
+  threshold_errors: 10
+  threshold_load: 20
+  threshold_reliability: 200
+  train_validation_fraction: 0.2
+simulator:
+  anomaly_rate: 0.15
+  enabled: false
+  interfaces_per_device: 4
+  period_seconds: 60
+snmp:
+  oids: {}
