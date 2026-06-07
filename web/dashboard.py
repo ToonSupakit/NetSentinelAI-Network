@@ -1617,7 +1617,17 @@ def push_device_down(info):
 
 def run_dashboard():
     host = os.getenv("DASHBOARD_HOST", "0.0.0.0")
-    port = int(os.getenv("DASHBOARD_PORT", "5000"))
+    if not host or not host.strip():
+        host = "0.0.0.0"
+    
+    port_str = os.getenv("DASHBOARD_PORT", "5000")
+    if not port_str or not port_str.strip():
+        port = 5000
+    else:
+        try:
+            port = int(port_str)
+        except ValueError:
+            port = 5000
     log.info("Dashboard starting on http://%s:%s", host, port)
     socketio.run(
         app,
