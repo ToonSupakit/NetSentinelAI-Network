@@ -114,7 +114,7 @@ def validate_env_payload(data):
             return False, f"{key} is too long"
         if key == "DASHBOARD_PORT" and text.strip() and not text.strip().isdigit():
             return False, "DASHBOARD_PORT must be numeric"
-        if key == "SESSION_COOKIE_SECURE" and text.strip().lower() not in {"1", "0", "true", "false", "yes", "no", "on", "off"}:
+        if key == "SESSION_COOKIE_SECURE" and text.strip() and text.strip().lower() not in {"1", "0", "true", "false", "yes", "no", "on", "off"}:
             return False, "SESSION_COOKIE_SECURE must be true or false"
         if key == "APP_ENV" and text.strip() and text.strip().lower() not in {"development", "dev", "production", "prod", "test"}:
             return False, "APP_ENV must be development, test, or production"
