@@ -569,21 +569,18 @@ def api_topology():
             log.warning(f"Failed to load dynamic links from config/links.yaml: {lf_err}")
 
         if not backbone_links:
-            # Fallback default links matching the current GNS3 topology
+            # Fallback default links matching the new EIGRP topology (R1-R5)
             backbone_links = [
-                ("ESW1", "FastEthernet0/0", "R2", "FastEthernet1/0"),
+                ("ESW1", "FastEthernet0/0", "R5", "FastEthernet0/0"),
                 ("ESW1", "FastEthernet0/1", "PC1", "e0"),
-                ("R2", "FastEthernet0/0", "R1", "FastEthernet0/0"),
-                ("R2", "FastEthernet0/1", "R3", "FastEthernet0/0"),
-                ("R1", "FastEthernet0/1", "R4", "FastEthernet0/1"),
-                ("R3", "FastEthernet0/1", "R4", "FastEthernet0/0"),
-                ("R4", "FastEthernet1/0", "R5", "FastEthernet0/0"),
-                ("R5", "FastEthernet0/1", "R6", "FastEthernet0/0"),
-                ("R5", "FastEthernet1/0", "R7", "FastEthernet0/0"),
-                ("R6", "FastEthernet0/1", "R8", "FastEthernet0/0"),
-                ("R7", "FastEthernet0/1", "R8", "FastEthernet0/1"),
-                ("R8", "FastEthernet1/0", "ESW2", "FastEthernet0/0"),
+                ("ESW2", "FastEthernet0/0", "R1", "FastEthernet0/0"),
                 ("ESW2", "FastEthernet0/1", "PC2", "e0"),
+                ("R1", "Serial2/0", "R2", "Serial2/0"),
+                ("R2", "Serial2/1", "R5", "Serial2/0"),
+                ("R1", "Serial2/2", "R5", "Serial2/2"),
+                ("R1", "Serial2/1", "R3", "Serial2/1"),
+                ("R3", "Serial2/0", "R4", "Serial2/1"),
+                ("R4", "Serial2/0", "R5", "Serial2/1")
             ]
 
         edges = []
