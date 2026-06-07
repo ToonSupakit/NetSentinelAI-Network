@@ -248,8 +248,6 @@ const RemediationManager = {
           // Call local page update functions
           if (typeof refresh === 'function') {
             refresh();
-          } else if (typeof fetchTopology === 'function') {
-            fetchTopology();
           }
         }
       });
