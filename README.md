@@ -2,30 +2,25 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/ToonSupakit/NetSentinelAI-Network)
 
-Developed a containerized network monitoring and automated remediation system for GNS3 lab environments. The system collects interface metrics via SNMP, uses an Isolation Forest model to detect traffic anomalies, and provides a Flask and Socket.IO web interface for real-time alerts and Netmiko-based Cisco CLI commands.
+A containerized network monitoring and automated remediation system for GNS3 lab environments. The system collects interface metrics via SNMP, uses an Isolation Forest model to detect traffic anomalies, and provides a web interface for alerts and Netmiko-based Cisco CLI commands.
 
 > [!NOTE]
-> **Lab-Oriented Scope:** This project is designed for learning, experimentation, and lab automation in simulated environments (e.g., GNS3). It is not intended to be a production-ready Network Management System (NMS). It serves as a practical demonstration of integrating SNMP collection, machine learning anomaly experiments, real-time dashboards, syslog tracking, and network device configuration management inside one Python codebase.
+> **Lab-Oriented Scope:** This project is designed for learning, experimentation, and lab automation in simulated environments (e.g., GNS3). It is not intended to be a production-ready Network Management System (NMS). It serves as a practical demonstration of integrating SNMP collection, machine learning anomaly experiments, dashboards, syslog tracking, and network device configuration management inside one Python codebase.
 
-## Key Features & Achievements
+## Features
 
-- **Machine Learning Anomaly Detection:** Combines standard threshold rules (for interface load, errors, and reliability) with an unsupervised Isolation Forest model trained on historical metrics to identify anomalous network behavior.
-- **Real-Time Glassmorphic Dashboard:** Built with Flask, Socket.IO, and a modern glassmorphic interface to stream live interface statuses, syslog events, and real-time network alert notifications.
-- **Automated Port Remediation:** Executes automated or manual interface port bounces (shutdown/no shutdown) and configures rate limiting on Cisco routers and switches using Netmiko (SSH/Telnet).
-- **Config Backup & Diff Engine:** Backs up active network device configurations and provides a Git-like comparison tool to easily view configuration changes over time.
-- **Containerized Architecture:** Fully dockerized with Docker Compose to deploy the Flask application alongside a MySQL 8.0 database with persistent storage.
-- **Scheduled Model Retraining:** Periodically retrains the Isolation Forest model in the background using historical database metrics to adjust to shifting traffic patterns.
-
-## System Architecture
-
-<img width="1650" height="953" alt="diagram-network-ai3" src="https://github.com/user-attachments/assets/3efa0c99-4a5f-4562-a87e-314248d75c4d" />
-
+- **Anomaly Detection:** Combines standard threshold rules (for interface load, errors, and reliability) with an unsupervised Isolation Forest model trained on historical metrics to identify anomalous network behavior.
+- **Web Dashboard:** Built with Flask and Socket.IO to display live interface statuses, syslog events, and real-time network alerts.
+- **Port Remediation:** Executes manual interface port bounces (shutdown/no shutdown) and configures rate limiting on Cisco devices using Netmiko (SSH/Telnet).
+- **Config Backup & Diff Engine:** Backs up network device configurations and provides a comparison tool to view configuration changes over time.
+- **Containerized Deployment:** Run with Docker Compose to deploy the Flask application alongside a MySQL 8.0 database with persistent storage.
+- **Scheduled Model Retraining:** Periodically retrains the Isolation Forest model in the background using database metrics.
 
 ## Tech Stack
 
 - Python 3.10+
 - Flask and Flask-SocketIO
-- SQLAlchemy with MySQL or SQLite-compatible development setups
+- SQLAlchemy with MySQL
 - PySNMP
 - Netmiko
 - Scikit-learn
@@ -48,12 +43,12 @@ Developed a containerized network monitoring and automated remediation system fo
 │   ├── collector.py                # SNMP/simulator collection
 │   ├── collector_rules.py          # Rule helpers
 │   ├── db.py                       # Database schema and queries
-│   ├── model_registry.py           # Model metadata helpers
+│   ├── model_registry.py           # Model registry
 │   ├── predictor.py                # Rules + ML prediction
 │   ├── prediction_intel.py         # Severity and correlation helpers
 │   ├── security.py                 # Runtime security helpers
-│   ├── simulator.py                # Mock topology data source
-│   ├── snmp_helper.py              # SNMP walks and interface parsing
+│   ├── simulator.py                # Mock data source
+│   ├── snmp_helper.py              # SNMP interface parsing
 │   ├── syslog_server.py            # UDP syslog receiver
 │   ├── user_repository.py          # User persistence helpers
 │   └── vendor_adapters.py          # Remediation command adapters
@@ -66,16 +61,16 @@ Developed a containerized network monitoring and automated remediation system fo
 │   ├── config.example.yaml         # Copy to config.yaml
 │   └── devices.example.yaml        # Copy to devices.yaml
 ├── tests/                          # Automated tests
-└── models/                         # Local trained model output, not committed
+└── models/                         # Local trained model output
 ```
 
 ## Requirements
 
 - Python 3.10+
-- MySQL 8.0+ for the main database flow
+- MySQL 8.0+
 - Network devices reachable from the machine running the app
-- SNMP enabled on devices, or simulator mode for demo use
-- Optional SSH/Telnet access for remediation and config backup
+- SNMP enabled on devices, or simulator mode
+- SSH/Telnet access on devices for remediation and config backup
 
 ## Setup
 
@@ -98,7 +93,7 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-Create local runtime files:
+Create local configuration files:
 
 ```bash
 cp .env.example .env
@@ -129,13 +124,11 @@ DASH_USER=admin
 DASH_PASS=admin123
 ```
 
-For lab use, defaults such as `admin123` and `public` may be acceptable. Do not use these values for any real or shared environment.
-
 ## Configuration
 
 ### `config/devices.yaml`
 
-This file defines the devices in the lab topology. Minimum required keys are `name`, `host`, and `device_type`.
+Defines the devices in the topology. Required keys are `name`, `host`, and `device_type`.
 
 ```yaml
 devices:
@@ -159,14 +152,7 @@ devices:
     upstream_device: R1
 ```
 
-Common Netmiko device types:
-
-- `cisco_ios`
-- `cisco_ios_telnet`
-- `cisco_nxos`
-- `arista_eos`
-- `juniper_junos`
-- `mikrotik_routeros`
+Supported Netmiko device types include: `cisco_ios`, `cisco_ios_telnet`, `cisco_nxos`, `arista_eos`, `juniper_junos`, `mikrotik_routeros`.
 
 ### `config/config.yaml`
 
@@ -214,11 +200,11 @@ anomaly:
     - Null
 ```
 
-`snmp.oids` can be used to override OIDs for a specific topology or vendor. If left empty, the app uses the default IF-MIB flow plus Cisco-oriented load/reliability OIDs.
+`snmp.oids` overrides default SNMP OIDs if needed.
 
 ## Device Setup Examples
 
-### SNMPv2c for lab
+### SNMPv2c for Lab
 
 ```text
 conf t
@@ -227,7 +213,7 @@ end
 wr
 ```
 
-### SNMPv3 example
+### SNMPv3 Example
 
 ```text
 conf t
@@ -239,7 +225,7 @@ end
 wr
 ```
 
-### Cisco IOS Telnet for lab remediation
+### Cisco IOS Telnet for Remediation
 
 ```text
 conf t
@@ -252,9 +238,7 @@ end
 wr
 ```
 
-Use SSH instead of Telnet if possible, especially outside an isolated lab.
-
-### Syslog to NetSentinel
+### Syslog Configuration
 
 ```text
 conf t
@@ -265,62 +249,52 @@ end
 wr
 ```
 
-The built-in syslog receiver tries UDP 514 first and falls back to UDP 5140 if 514 cannot be bound.
+The built-in syslog receiver listens on UDP 514 and falls back to UDP 5140 if 514 is blocked.
 
-## Deployment & Execution
-
-You can run the application either directly in a local Python environment or containerized using Docker Compose.
+## Execution
 
 ### 1. Running Locally (Python)
 
-Activate your virtual environment and run the main entry point:
+Activate the virtual environment and run the main entry point:
 
 ```bash
 python main.py
 ```
 
-This starts all essential background routines:
+This starts:
 - Database schema initialization
 - SNMP interface metrics collector & anomaly prediction loop
-- Real-time Flask dashboard & Socket.IO stream
+- Web dashboard & Socket.IO stream
 - Background scheduled model retrain loop
-- UDP syslog receiver server (listens on port `514` or `5140`)
+- UDP syslog receiver server (port `514` or `5140`)
 
 Access the dashboard locally at: http://localhost:5000
 
 ---
 
-### 2. Running in Containers (Docker Compose)
+### 2. Running with Docker Compose
 
-The system is fully containerized, which is the recommended deployment method (especially when running alongside GNS3 on a VMware host to prevent hypervisor conflicts).
+Make sure `.env`, `config/config.yaml`, and `config/devices.yaml` are created, then run:
 
-Make sure `.env`, `config/config.yaml`, and `config/devices.yaml` are created locally, then run:
-
-**Build and Start Containers:**
+**Start Containers:**
 ```bash
 sudo docker compose up -d --build
 ```
 This builds and starts:
 - `netsentinel-db` (MySQL 8.0) container with persistent database volumes.
-- `netsentinel-app` container with your local directory volume-mounted (`.:/app`) so code changes sync instantly.
-- Exposes port `5000` (Web UI) and port `514` (UDP Syslog).
+- `netsentinel-app` container. Exposes port `5000` (Web UI) and port `514` (UDP Syslog).
 
-**Monitor Status & Logs:**
+**Monitor Logs:**
 ```bash
-# Check container status
-sudo docker compose ps
-
-# View application logs
 sudo docker compose logs -f app
 ```
 
-**Restarting the Application:**
-To apply any Python code changes without rebuilding the image, simply restart the app container:
+**Restart Application:**
 ```bash
 sudo docker compose restart app
 ```
 
-## Demo Mode Without Devices
+## Simulator Mode
 
 Enable simulator mode in `config/config.yaml`:
 
@@ -331,32 +305,19 @@ simulator:
   anomaly_rate: 0.15
 ```
 
-Then run:
-
-```bash
-python main.py
-```
-
 The collector will use simulated interface data instead of live SNMP devices.
 
 ## Training The Model
 
-Collect some baseline data first:
-
-```bash
-python main.py
-```
-
-Then train in another terminal:
+Collect some baseline data first by running the app, then train the model:
 
 ```bash
 python train_model.py
 ```
 
-The model is saved to the configured `model.path`, usually `models/anomaly_model_v2.pkl`. Model output is local runtime data and should not be committed.
+The model is saved to `models/anomaly_model_v2.pkl`.
 
-The dashboard can also queue retraining from:
-
+The dashboard can also trigger retraining from:
 ```text
 Settings -> AI Model -> Retrain Model
 ```
@@ -366,26 +327,13 @@ Settings -> AI Model -> Retrain Model
 - `/login` - login page
 - `/` - interface status and anomaly feed
 - `/traffic` - recent traffic view
-- `/topology` - lab topology map
 - `/logs` - syslog and audit log views
 - `/backups` - configuration backup tools
 - `/settings` - admin settings, devices, environment, users, and model controls
 
-## Topology Notes
-
-Devices are configured in `config/devices.yaml`, but the current topology map still has some lab-specific links in `web/dashboard.py` under `backbone_links`.
-
-When using a new topology, update:
-
-1. `config/devices.yaml` for device names, hosts, roles, zones, and SNMP settings.
-2. `config/config.yaml` for link type prefixes and anomaly skip rules.
-3. `web/dashboard.py` if the displayed topology links differ from the current lab.
-
-The names in `backbone_links` must match the device `name` values in `config/devices.yaml`.
-
 ## API Overview
 
-Public/auth:
+### Public:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -394,7 +342,7 @@ Public/auth:
 | POST | `/api/login` | Login JSON endpoint |
 | GET | `/logout` | Clear session |
 
-User-authenticated:
+### Authenticated:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
@@ -402,27 +350,26 @@ User-authenticated:
 | GET | `/api/anomalies` | Latest anomaly history |
 | GET | `/api/analytics` | Summary metrics |
 | GET | `/api/traffic` | Recent traffic trend |
-| GET | `/api/topology` | Topology nodes and links |
 | GET | `/api/model/status` | Model metadata and retrain job status |
 
-Admin-only:
+### Admin:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| POST | `/api/model/retrain` | Queue model retrain |
-| POST | `/api/fix/<device>/<intf>` | Queue port bounce/no shutdown style fix |
-| POST | `/api/ratelimit/<device>/<intf>` | Queue rate limit |
-| POST | `/api/removelimit/<device>/<intf>` | Queue rate-limit removal |
+| POST | `/api/model/retrain` | Trigger model retrain |
+| POST | `/api/fix/<device>/<intf>` | Trigger port bounce |
+| POST | `/api/ratelimit/<device>/<intf>` | Configure rate limit |
+| POST | `/api/removelimit/<device>/<intf>` | Remove rate limit |
 | GET/POST | `/api/settings/config` | Read/write `config/config.yaml` |
 | GET/POST | `/api/settings/devices` | Read/write `config/devices.yaml` |
-| GET/POST | `/api/settings/env` | Read/write allowed `.env` keys; secrets are not returned |
+| GET/POST | `/api/settings/env` | Read/write allowed `.env` keys |
 | GET/POST | `/api/users` | List/create users |
-| DELETE | `/api/users/<id>` | Delete user with guard rails |
-| PUT | `/api/users/<id>/role` | Change role with guard rails |
+| DELETE | `/api/users/<id>` | Delete user |
+| PUT | `/api/users/<id>/role` | Change user role |
 
-Mutating endpoints require an `X-CSRF-Token` header or `csrf_token` form field.
+Mutating endpoints require an `X-CSRF-Token` header.
 
-## Tests And Quality
+## Tests
 
 Run tests:
 
@@ -437,45 +384,24 @@ ruff check .
 black .
 ```
 
-Check formatting only:
-
-```bash
-black --check .
-```
-
 Current tests cover:
-
-- Flask auth/admin/user endpoint behavior
-- CSRF checks for mutating routes
-- `.env` save/load secret masking
-- user management guard rails
-- dashboard XSS regression checks
-- SNMP parsing and collector mock-device integration
-- predictor rules and ML behavior
-- syslog and terminal helper behavior
-- remediation command generation
-
-## CI
-
-GitHub Actions is configured in `.github/workflows/ci.yml`.
-
-It installs dependencies and runs:
-
-```bash
-python -m pytest
-```
+- Flask authentication and endpoint behavior
+- CSRF checks
+- `.env` saving and secret masking
+- User management guard rails
+- XSS regression checks
+- SNMP parsing and collector mock integration
+- Predictor rules and ML behavior
+- Syslog and terminal helper behavior
+- Remediation command generation
 
 ## Operational Notes
 
-For lab use:
-
-- Keep `.env`, `config/config.yaml`, `config/devices.yaml`, logs, backups, scratch files, and `models/*.pkl` out of Git.
+- Keep `.env`, `config/config.yaml`, `config/devices.yaml`, logs, backups, and models out of Git.
 - Restart the app after changing topology/config files.
 - Test remediation commands on non-critical devices first.
-- Prefer SSH over Telnet when available.
 - Use SNMPv3 instead of SNMPv2c when moving beyond an isolated lab.
-
-Before considering any real production use, the project would need additional review around deployment, TLS, secrets management, authorization policy, backup/restore, observability, failure handling, model validation, and safe remediation controls.
+- Before considering any real production use, the project would need additional review around deployment, TLS, secrets management, authorization policy, observed latency, observability, failure handling, model validation, and safe remediation controls.
 
 ## License
 
