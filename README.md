@@ -4,6 +4,18 @@
 
 A containerized network monitoring and automated remediation system for GNS3 lab environments. The system collects interface metrics via SNMP, uses an Isolation Forest model to detect traffic anomalies, and provides a web interface for alerts and Netmiko-based Cisco CLI commands.
 
+---
+
+## 🏗️ System Architecture & Data Flow
+
+![NetSentinel System Architecture](screenshots/architecture.png)
+
+### 📊 Rule and AI Decision Logic Flow
+
+![Rule and AI Logic Flowchart](screenshots/decision_flowchart.png)
+
+---
+
 > [!NOTE]
 > **Lab-Oriented Scope:** This project is designed for learning, experimentation, and lab automation in simulated environments (e.g., GNS3). It is not intended to be a production-ready Network Management System (NMS). It serves as a practical demonstration of integrating SNMP collection, machine learning anomaly experiments, dashboards, syslog tracking, and network device configuration management inside one Python codebase.
 
